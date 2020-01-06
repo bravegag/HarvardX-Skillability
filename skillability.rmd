@@ -1,0 +1,2124 @@
+--- 
+title: "Skillability"
+author: "Giovanni Azua Garcia - giovanni.azua@outlook.com"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    includes: 
+      in_header: packages.sty
+    df_print: kable
+    keep_tex: yes
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  word_document:
+    toc: yes
+    toc_depth: '3'
+bibliography:
+- bibliography.bib
+description: HarvardX - PH125.9x Data Science Capstone
+documentclass: report
+fontsize: 11pt
+geometry: a4paper,left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm
+github-repo: https://github.com/bravegag/HarvardX-Skillability
+link-citations: yes
+lof: yes
+lot: yes
+mainfont: Lato
+monofont: Hack
+monofontoptions: Scale=0.7
+colorlinks: yes
+site: bookdown::bookdown_site
+subtitle: HarvardX - PH125.9x Data Science Capstone
+tags:
+- data science
+- machine learning
+- recommender systems
+- stochastic gradient descent
+- nlp
+- collaborative filtering
+- stack-overflow
+biblio-style: apalike
+---
+
+```{r initialization,echo=FALSE,message=FALSE}
+##########################################################################################
+## GLOBAL Initialization
+##########################################################################################
+
+# clean the environment
+rm(list = ls())
+
+##########################################################################################
+## Install and load required library dependencies
+##########################################################################################
+
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(boot)) install.packages("boot", repos = "http://cran.us.r-project.org")
+if(!require(purrr)) install.packages("purrr", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(tictoc)) install.packages("tictoc", repos = "http://cran.us.r-project.org")
+if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
+if(!require(stringr)) install.packages("stringr", repos = "http://cran.us.r-project.org")
+if(!require(doMC)) install.packages("doMC", repos = "http://cran.us.r-project.org")
+if(!require(parallel)) install.packages("parallel", repos = "http://cran.us.r-project.org")
+if(!require(microbenchmark)) install.packages("microbenchmark", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(ggmap)) devtools::install_github("dkahle/ggmap")
+if(!require(ggrepel)) install.packages("ggrepel", repos = "http://cran.us.r-project.org")
+if(!require(scales)) install.packages("scales", repos = "http://cran.us.r-project.org")
+if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
+if(!require(Metrics)) install.packages("Metrics", repos = "http://cran.us.r-project.org")
+if(!require(kableExtra)) install.packages("kableExtra", repos = "http://cran.us.r-project.org")
+if(!require(here)) install.packages("here", repos = "http://cran.us.r-project.org")
+if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.org")
+
+##########################################################################################
+## Setup initial global values
+##########################################################################################
+
+# register cores for parallel processing
+ncores <- detectCores()
+registerDoMC(ncores)
+
+##########################################################################################
+## knitr settings
+##########################################################################################
+
+# Trigger line numbering
+knitr::opts_chunk$set(
+  class.source = "numberLines lineAnchors", 
+  class.output = c("numberLines lineAnchors chunkout") 
+)
+
+# knitr global settings - By default, the final document will not include source code unless
+# expressly stated.
+knitr::opts_chunk$set(
+  # Chunks
+  eval = TRUE,
+  cache = TRUE,
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+
+  # filepaths
+  fig.path =   'build/figure/graphics-', 
+  cache.path = 'build/cache/graphics-', 
+  
+  # Graphics
+  out.width = "110%",
+  fig.align = "center",
+  # fig.height = 3,
+
+  # Text size
+  size = "small"
+)
+
+if (knitr::is_html_output()) {
+  knitr::opts_chunk$set(dev = "png")
+} else {
+  knitr::opts_chunk$set(dev = "pdf")
+}
+
+# Modify the size of the code chunks
+# https://stackoverflow.com/questions/25646333/code-chunk-font-size-in-rmarkdown-with-knitr-and-latex
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+
+##########################################################################################
+## Define important reusable functions e.g. the portable.set.seed(...)
+##########################################################################################
+
+# Portable set.seed function (across R versions) implementation
+# @param seed the seed number
+portable.set.seed <- function(seed) {
+  if (R.version$minor < "6") {
+    set.seed(seed)
+  } else {
+    set.seed(seed, sample.kind="Rounding")
+  }
+}
+
+# Returns the file path for the given object name.
+#
+# @param objectName the name of the object e.g. "Users"
+# @param prefixDir the prefix directory where all data is stored e.g. "data"
+# @param rdsDir the directory where the RDS files are located e.g. "rds"
+# @param ext the extension for the RDS files i.e. ".rds"
+# @returns the file path for the given dataset name.
+filePathForObjectName <- function(objectName, prefixDir="data", 
+                                  rdsDir="rds", ext=".rds") {
+  rdsFolder <- file.path(prefixDir, rdsDir)
+  if (!dir.exists(rdsFolder)) {
+    dir.create(rdsFolder, recursive = T)
+  }
+  fileName <- paste(objectName, ext, sep="")
+  filePath <- file.path(rdsFolder, fileName)
+  return(filePath)  
+}
+
+# Returns the object (dataset or otherwise) by name, it will either load the dataset from an 
+# RDS file if it exists or download it from GitHub automatically. If downloaded then the file 
+# will be created in the expected location so that we won't be downloading it again.
+#
+# @param objectName the name of the dataset e.g. "Users"
+# @param prefixDir the prefix directory where all data is stored e.g. "data"
+# @param rdsDir the directory where the RDS files are located e.g. "rds"
+# @param ext the extension for the RDS files i.e. ".rds"
+# @param baseUrl the base GitHub url where the data is located.
+# @param userName the GitHub user name e.g. "bravegag"
+# @param repoName the GitHub repository name e.g. "HarvardX-Skillability"
+# @param branchName the GitHub branch name e.g. "master"
+# @returns the dataset by name.
+readObjectByName <- function(objectName, prefixDir="data", rdsDir="rds", ext=".rds", 
+                             userName="bravegag", repoName="HarvardX-Skillability", branchName="master", 
+                             baseUrl="https://github.com/%s/%s/blob/%s/data/rds/%s?raw=true") {
+  filePath <- filePathForObjectName(objectName = objectName, prefixDir = prefixDir, 
+                                    rdsDir = rdsDir, ext = ext)
+  fileName <- basename(filePath)
+  if (!file.exists(filePath)) {
+    # download the file
+    url <- sprintf(baseUrl, userName, repoName, branchName, fileName)
+    download.file(url, filePath, extra="L")
+  }
+  return(readRDS(filePath))
+}
+
+# Saves the object (dataset or otherwise) by name, the required folders will be 
+# created if they don't already exist.
+#
+# @param object the object e.g. tibble or data frame
+# @param objectName the name of the object e.g. "Users"
+# @param prefixDir the prefix directory where all data is stored e.g. "data"
+# @param rdsDir the directory where the RDS files are located e.g. "rds"
+# @param ext the extension for the RDS files i.e. ".rds"
+saveObjectByName <- function(object, objectName, prefixDir="data", 
+                             rdsDir="rds", ext=".rds") {
+  filePath <- filePathForObjectName(objectName = objectName, prefixDir = prefixDir, 
+                                    rdsDir = rdsDir, ext = ext)
+  saveRDS(object=object, file=filePath)
+}
+
+# Pretty prints the given tibble using kable
+# @param t the tibble to print
+prettyPrint <- function(t, latex_options = c("striped", "scale_down")) {
+  return(kable(t, "latex", booktabs = T) %>% 
+           kable_styling(position = "center", latex_options = latex_options) %>%
+           row_spec(0, bold = T))
+}
+```
+
+```{css echo=FALSE}
+code {
+  font-family: Hack, monospace;
+  font-size: 85%;
+  padding: 0;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  background-color: rgba(0,0,0,0.04);
+  border-radius: 3px;
+}
+
+code:before,
+code:after {
+  letter-spacing: -0.2em;
+  content: "\00a0";
+}
+```
+
+# Licenses, Terms of Service, Privacy Policy, and Disclaimer {-}
+
+**Data license**: The dataset files downloaded, extracted, transformed, assembled or processed in any form as part of this project are derived from Stack Overflow^[https://archive.org/details/stackexchange]'s and retain their original license: Attribution-Share Alike 4.0 International (CC BY-SA 4.0)^[https://creativecommons.org/licenses/by-sa/4.0/].
+\
+
+**Code license**: The code delivered as part of this project is licensed under the GNU Affero General Public License (AGPL v3)^[https://www.gnu.org/licenses/agpl-3.0.en.html].
+\
+
+**Terms of Service and Privacy Policy**: In this project we use anonymised user data and the Google Maps API therefore we're also bound by [Google's Terms of Service](https://www.google.com/intl/en/policies/terms) and [Google's Privacy Policy](https://www.google.com/policies/privacy).
+\
+
+**DISCLAIMER Third-Party Trademark Notice**: All third-party trademarks referenced in this report (i.e. tags or skills), whether in logo form, name form or product form, or otherwise remain the property of their respective owners, and are used here only to refer the credentials and proficiency of the Stack Overflow users in using the technology, products or supporting solutions. The use of these trademarks in no way indicates any relationship between the author of this report and their respective owners. The description of the capabilities regarding any of the listed trademarks does not imply any relationship, affiliation, sponsorship or endorsement and reference to those shall be considered nominative fair use under the trademark law. 
+
+# Introduction {-}
+If you ever programmed, faced a technical question and "Googled it", it's needless to say that you have already probably landed in the Stack Overflow^[https://www.stackoverflow.com] site. Stack Overflow is a platform aimed at programmers of all levels for asking and answering technical questions. The platform was created in 2008^[https://en.wikipedia.org/wiki/Stack_Overflow] and it's the most popular site as part of the Stack Exchange Network^[https://stackexchange.com/sites#]. The platform offers multiple features, the most popular one being the ability to up vote and down vote user posts (either questions or answers) contributing to the posting user's overall reputation. Based on reputation, the plaform enables users to reach different priviledges such as the ability to vote, comment and edit posts. Furthermore, users are awarded "badges" (i.e. achievements) that relate to: the overall reputation, answers, questions or even the frequency of use of the site. The author of this work is an avid user of the platform^[https://stackoverflow.com/users/1142881/] since its inception and has periodically used it more towards asking rather than answering technical questions. A result of the present work, is to more strongly consider using the site for **answering questions** rather than just asking.
+\
+
+Very luckily for us the Stack Overflow data is available for download^[https://archive.org/details/stackexchange] and in different formats, opening the door for conducting truly interesting data analysis with many applications in the context of the recruitment industry such as: resume (or CV) compilation^[https://www.kickstarter.com/projects/1647975128/one-thousand-words-cv-1kwcv/], job candidate shortlisting, job candidate assessment, staff skills assessment, technology trends analysis, and many more.
+
+## Project goals {-}
+
+We first focus in delivering a fully automated method and R code to download, extract, process and clean the Stack Overflow dataset that's directly applicable to any other Stack Exchange Network site data. The dataset we compiled is **anonymised** i.e only the artificial integer key `userId` is stored. After a basic exploratory data analysis of the full dataset we move to the following data analysis use-cases. The first two objectives are covered as part of the [Data exploration and visualization] section. The last objective is covered in the [Modeling approach] and [Method implementation] sections.
+
+### The What: skills and technology trends {-}
+
+Questions in Stack Overflow contain one or more tags e.g. [java](https://stackoverflow.com/questions/tagged/java]). For professionals who work in programming these tags are skills and they are listed as such in a resume (or CV)^[https://www.dropbox.com/s/6t7mq5zcztarah4/1kwcv_prototype_Giovanni.pdf?dl=1]. Therefore, in this analysis step we'd like to find the top skills by frequency of use, establish a proximity measure and discover skill groups. We're also very interested in discovering what major technology trends exist and their importance.
+\
+
+To this end, the top tags (or skills) are first selected. The key modeling approach (in NLP terms) is to view questions as "documents" and skills as "words" and count how many times skills occur pair-wise together in the same questions, therefore we generate a skills co-occurrence matrix. We then compute Principal Component Analysis (PCA) on the scaled co-occurrence matrix. The first two principal components reveal what are the skill groups that explain most of the variance in the data or how we like to call it the main "technology trends". We visualize the top and bottom ends of these two principal components. The remaining PCA components reveal other skill groups.
+\
+
+This first analysis step enpower us to answer many practical questions e.g. 
+
+* As a programmer: what are the main technology trends at the moment and which one shall I invest learning on?
+* As a company: we'd like to build a new product, which technology stack should we use? check the top components for the most popular stacks in the area required.
+* As a resume (or CV) compilation service: suggest candidates with skills they may have overlooked to include in their CV and are among the most important e.g. when listing `java`, suggest also `java-ee`.
+
+Note that applying this method in a rolling time window fashion e.g. every year compute this analysis for a time window of three years ending at the given date; will reveal the industry changes in technology trends over time.
+
+### The Where: putting it in geographical context {-}
+
+Here we search for all Stack Overflow users in Switzerland, find their top technology skills looking into the tags linked to their top answers by score or otherwise top questions by score, and link these top skills to the top technology trends revealed in the first few PCA components of the previous analysis. We then use Google's [Geocoding API](https://developers.google.com/maps/documentation/geocoding/) and [Maps Static API](https://developers.google.com/maps/documentation/maps-static/) to compute the user locations (i.e. longitude and latitude) and extract a map of Switzerland respectively. Finally we put the main technology trends revealed by the previous analysis into geographical context. Note that due to the [Google Maps Platform Terms of Services](https://cloud.google.com/maps-platform/terms/#3-license) the geocoding results may not be cached, therefore to be able to execute and reproduce the results in this section you'd need a valid Google API key see [Get an API Key](https://developers.google.com/places/web-service/get-api-key) and make it available in your environment as `GOOGLE_API_KEY`. However, the few API calls needed will easily fit cost-free within a free trial version of the Google Maps API.
+\
+
+You may wonder why Switzerland? because it's where the author lives and Switzerland is a relatively small country which is nice in order to keep the geocoding costs low i.e. we need to call Google's Geocoding API for every^[Actually all the distinct user locations i.e. about four hundreds] user located in Switzerland. This second step enables answering very practical questions e.g. 
+
+* As a programmer: which locations should I consider to find jobs that match my main areas of expertise?
+* As a company: where do we find relevant partners and support on the technology areas we need?
+* As a recruitment company: where should we look for talent?
+\
+
+### The How: rating user skills {-}
+
+The author of this work has in the past applied to jobs with listing describing requirements that include one or a few skills for which he had no previous experience. For example, he was recently rejected while applying for a position that required knowledge of [Tableau](https://www.tableau.com/). Indeed, he had no previous experience on this particular skill so it wasn't listed in his CV; however, he has extensive experience in data visualization using e.g. `d3.js` and `ggplot2`. His `sql` skill level is well above average too, therefore he intuitively "felt" that he would have nevertheless been a great match for that position and that's why he applied in the first place.
+\
+
+This project reminded of another anecdote, a collegue that was very unsure which graduate program to pursue. Surprisingly he decided to ask the admissions secretary and she recommended that he would be better off going for a master in Computational Biology and so he did. If a secretary can do it, can we not also trust a machine learning model to recommend what future career to pursue given your skill ratings?
+\
+
+In this final step a user skill `ratings` dataset derivation is designed, constructed and modeled to solve the ultimate task covered in this project: to predict how good a candidate would be in a skill for which there is no previous evidence. That's it, we present and implement a recommender system to predict user-skill ratings using the collaborative filtering approach. More specifically, we'll apply the model-based approach using low-rank matrix factorization (LRMF) and two implementation variations of the stochastic gradient descent (SGD) algorithm. The first algorithm is based on the classic SGD with multiple improvements for faster and better convergence e.g. cast the `P` and `Q` matrices of the SGD algorithm in column major ordering to match the R's default matrix memory ordering. The second algorithm is an R-based lock-free parallel multi-core SGD variation of the first featuring a speed up of roughly 2x with comparable high quality out-of-sample RMSE result and with potential for higher speed ups. However, we first navigate through a simpler baseline model implementation based on isolating the different biases or effects and we'll there outline some interesting findings. 
+\
+
+What used to be just an intuitive "feeling" was happily confirmed by the model employed in this project as it predicted the author's rating on `tableau` to be well above average. What's the moral of the story? hiring personnel shouldn't be too hasty dismissing candidates whose skills don't match the job requirements exactly but first consult a Machine Learning model like the one we built in this project.
+\
+
+This last analysis enables us to answer many practical questions too e.g. 
+
+* As a programmer: given my current skill ratings, in what technologies am I predicted to perform way above average?
+* As a company: Can we reorganize and optimize our skills distribution per department without firing / hiring anyone?
+* As a recruitment company: candidate X doesn't explicitly list required skill Y in her CV, however our model predicted her to be a perfect match for that job.
+
+# Data analysis
+
+## Data import
+
+The script `create_dataset.r` contains all the code to automatically download, extract, parse, clean and construct all the complete dataset required for analysis e.g. the `ratings`. The script is large and only the most important points will be covered; however, the script is very well structured and commented. Running `create_dataset.r` the first time may take several hours and require large amounts of free disk disk space. Furthermore the script requires running in an Unix-like environment^[It was tested in Ubuntu 18.04 with 32GB RAM, a 6-core Intel i7-4960X and a SSD drive.] that has the following tools available: `wc`, `split`, `awk`, `7z`, `rename`, `mv`, `grep` and `time`. The script will automatically create and populate the relative folders `data/7z/*` containing the downloaded files; the folder `data/xml/*` containing the extracted XML files and finally the folder `data/rds/*` containing the generated dataset files^[Available in the project's GitHub page: https://github.com/bravegag/HarvardX-Skillability]. Note that running `create_dataset.r` **is optional** as the final `rds` files are readily available under the relative folder `data/rds/*` in the project's GitHub repository https://github.com/bravegag/HarvardX-Skillability.
+\
+
+```{r data_files_table,message=TRUE}
+local({
+  tbl <- data.frame(
+    Name =        c("`stackoverflow.com-Badges.7z`", 
+                    "`stackoverflow.com-Posts.7z`", 
+                    "`stackoverflow.com-Tags.7z`", 
+                    "`stackoverflow.com-Users.7z`"),
+    
+    Compressed = c("254.5MB", 
+                   "15.3GB",
+                   "817.0kb", 
+                   "529.3MB"),
+    
+    Uncompressed = c("4.0GB", 
+                     "76.5GB",
+                     "5.1MB", 
+                     "3.7GB"),
+
+    Description = c("All badge assignments.", 
+                    "All the question and answer posts.", 
+                    "All the tags.",
+                    "All the users.")
+  )
+
+  kable(tbl, "latex", booktabs = T) %>% 
+    kable_styling(full_width = F) %>% 
+    column_spec(4, width = "6cm") %>% 
+    row_spec(0, bold = T)
+})
+```
+
+The extracted XML file where up to 76.5GB in size. Several methods were tested to load, parse and extract the data from such big files and the best solution found was a combination of the following points^[See functions `downloadExtractAndProcessXml(...)` and `extractDataFromXml2(...)`]: 
+
+1. Splitting the huge files into smaller ones (split into as many files as there are cores available), loading and parsing the files in parallel. Note that the split files are temporarily written to the relative `data/xml` directory.
+2. Using `readr::read_lines_chunked` to read chunks of XML, keeping the memory footprint low as each core will process a bounded chunk of XML.
+3. The trick to turn these smaller XML chunks of rows into a valid XML was to wrap them within `<xml>...</xml>` tags^[Credits given to the answer of https://stackoverflow.com/questions/59329354 for coining the idea.].
+4. Finally use the package `xml2` for parsing, extracting and consolidating the data into tibbles which are later stored as `rds` files.
+
+The function `extractDataFromXml2(...)` was made generic; it takes a `mapping` parameter that identifies which XML attributes to read and what column names they should be mapped to in the resulting tibble.
+\
+
+Note that the huge Posts XML file contains both questions and answers and they're automatically segregated by grepping for attributes that would only be contained in either e.g. only questions contain the attribute `AnswerCount` so we do `system(command=sprintf("time grep \"AnswerCount\" %s/Posts.xml > %s/Questions.xml", xmlDir, xmlDir))`.
+
+## Data cleaning
+
+The data cleaning steps were also covered as part of the `create_dataset.r` implementation. The cleaning process removes rows with missing important XML attributes e.g. answer posts with missing "foreign key" `questionId`. Several data transformations are applied too e.g. the questions attribute `tags` has HTML entity separators which are transformed into pipe separated^[See `create_dataset.r` lines #548 and #549.]. The cleaning outcome is briefly summarized in the following table:
+
+```{r data_cleaning,message=TRUE}
+local({
+  tbl <- data.frame(
+    Dataset = c("tags", 
+                "users", 
+                "badges", 
+                "questions",
+                "answers"),
+    
+    Before = c("56.5k rows", 
+               "~11.37m rows",
+               "~12.59m rows", 
+               "~18.59m rows",
+               "~28.25m rows"),
+    
+    After = c("56.5k rows", 
+              "~200k rows",
+              "~12.59m rows", 
+              "~5.39m rows",
+              "~4.83m rows"),
+
+    Description = c("Unchanged.", 
+                    "Keep only users having reputation greater than 999 or are located in Switzerland.",
+                    "Unchanged.",
+                    "Keep only questions answered or created from the users selection and in the later case with a score greater than 0.",
+                    "Keep only answers created from the users selection, with score greater than 2 and having a valid answerId.")
+  )
+
+  kable(tbl, "latex", booktabs = T) %>% 
+    kable_styling(full_width = F) %>% 
+    column_spec(4, width = "7cm") %>% 
+    row_spec(0, bold = T)
+})
+```
+
+We notice that only 1.75% of the users are participative. The vast majority of users only seem to create a handful of posts and use the site in "read-only" mode i.e. not making any posts. Read-only users are not interesting for the different analyses and were therefore excluded.
+
+## Data exploration and visualization
+
+### Description of the dataset
+
+We load the bundled `rds` data files using the following code:
+```{r load-data-files,echo=TRUE,message=FALSE}
+# load the Users, Questions, Answers, Badges and Tags data files
+users <- readObjectByName("Users")
+questions <- readObjectByName("Questions")
+answers <- readObjectByName("Answers")
+badges <- readObjectByName("Badges")
+tags <- readObjectByName("Tags")
+```
+
+The `users` frame includes all the users we have selected for analysis, each row is uniquely identified by the key `userId` which is used to link with other tables. The column `creationDate` timestamp represents the time when the user account was first created. Note that `location` is free text which we use later as input to the Google Geocoding API for generating geographic coordinates:
+```{r structure-users,echo=TRUE,message=TRUE}
+prettyPrint(head(glimpse(users)))
+```
+
+The `questions` frame contains all the questions we have selected and each row is uniquely identified by the key `questionId` which is used to link with other tables. Note the `tags` column will be used extensively in this work; it has during the data cleaning phase already been preprocessed to pipe separated from HTML encoded entities. The column `acceptedAnswerId` identifies the accepted answer among all that corresponds to answers' `answerId`:
+```{r structure-questions,echo=TRUE,message=TRUE}
+prettyPrint(head(glimpse(questions)), latex_options = c("striped", "scale_down"))
+```
+
+The `answers` frame contains all the answers also uniquely identified by the key `answerId`. Note that we can find the tags or skills linked to an answer by joining with the `questions` frame via the "parent" `questionId` and reading the `tags` column:
+```{r structure-answers,echo=TRUE,message=TRUE}
+prettyPrint(head(glimpse(answers)), latex_options = c("striped", "scale_down"))
+```
+
+The `badges` frame contains the user badge assignments (linked via the foreign key `userId`), for example, the `gold` badge "Populist" is one of the hardest for an user to get and requires outscoring an already accepted answer with score of more than 10 by more than 2x of the accepted answer^[See https://stackoverflow.com/help/badges/62/populist]:
+```{r structure-badges,echo=TRUE,message=TRUE}
+prettyPrint(head(glimpse(badges)), latex_options = c("striped"))
+```
+
+Finally the tags data frame contains the all the unique tags along with their use counts:
+```{r structure-tags,echo=TRUE,message=TRUE}
+prettyPrint(head(glimpse(tags)), latex_options = c("striped"))
+```
+
+### Quick exploration
+
+Let's explore some interesting facts from the data we have, the top ranking question, answer, user, tags (i.e. skills) and the top ten gold badges. The top ranking answer applies to the top ranking question and they relate to `c++`, `performance` and code `optimization`. By looking at the top ten gold badges it shows that being awarded with a "Great Question"^[See https://stackoverflow.com/help/badges/22/great-question] is harder than for a "Great Answer"^[See https://stackoverflow.com/help/badges/25/great-answer], it would seem from this result that users tend to up vote more answers than questions:
+```{r exploration-basic,echo=TRUE,message=TRUE}
+# what's the question with highest score?
+prettyPrint(
+  questions %>% 
+    top_n(1, score) %>% 
+    select(questionId, acceptedAnswerId, tags, score, answerCount, favoriteCount, 
+           viewCount)
+)
+
+# what's the answer with highest score?
+prettyPrint(
+  answers %>% 
+    top_n(1, score) %>%
+    select(answerId, questionId, score, commentCount, creationDate)
+, latex_options = c("striped"))  
+
+# what's the top user?
+prettyPrint(
+  users %>%
+    top_n(1, reputation) %>%
+    select(userId, reputation, creationDate, location, upvotes, downvotes)
+)
+
+# what are the top ten tags / skills?
+prettyPrint(
+  topTenSkills <- tags %>%
+    top_n(10, count) %>%
+    arrange(desc(count)) %>%
+    rename(skill=tag)
+, latex_options = c("striped"))
+
+# what are the top ten gold badges hardest to get i.e. with fewer users awarded?
+prettyPrint(
+  badges %>%
+    filter(class == "gold") %>%
+    group_by(badge) %>%
+    summarise(awarded = n()) %>%
+    top_n(10, -awarded) %>%
+    arrange(awarded)
+, latex_options = c("striped"))
+```
+
+The following statistics reveal the highly skewed nature of the data (the mean is far from the median in most cases):
+```{r exploration-statistics,echo=TRUE,message=TRUE}
+# what's the average user reputation?
+prettyPrint(
+  users %>%
+    summarise(mean=mean(reputation), median=median(reputation))
+, latex_options = c("striped"))
+
+# what's the average number of questions per user?
+prettyPrint(
+  questions %>%
+    group_by(userId) %>%
+    summarise(n = n()) %>%
+    ungroup() %>%
+    summarise(mean=mean(n), median=median(n))
+, latex_options = c("striped"))
+
+# what's the average number of answers per user?
+prettyPrint(
+  answers %>%
+    group_by(userId) %>%
+    summarise(n = n()) %>%
+    ungroup() %>%
+    summarise(mean=mean(n), median=median(n))
+, latex_options = c("striped"))
+
+# what's the average number of answers per question?
+prettyPrint(
+  questions %>%
+    summarise(mean=mean(answerCount), median=median(answerCount))
+, latex_options = c("striped"))
+```
+
+In the following listing we apply the `log10` transformation^[We preferred to work with the `log10` for reputation because it's a nicer scale, an order-invariant transformation, and easier to interpret than natural `log`.] to the users reputation and plot its histogram, the plot confirms that the users reputation is positively skewed. Remember that we set the user selection criteria to be: users with reputation greater than 999 or located in Switzerland, so there we have some of the users located in Switzerland to the left of $\text{log10}(999) \approx 3$ and we exclude them first:
+```{r histogram-reputation,echo=TRUE,message=TRUE}
+users %>%
+  filter(reputation > 999) %>%
+  mutate(reputation=log10(reputation)) %>%
+  ggplot(aes(reputation)) + 
+  geom_histogram(bins = 200, colour="#377EB8", fill="#377EB8") +
+  xlab("log10 reputation") +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.text = element_text(size=12),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Now, if we split the users per badges^[We chose only the badges relevant for our analysis see https://stackoverflow.com/help/badges] then the histograms look a bit nicer i.e. no longer so skewed but still asymmetrical and quite departed from a normal distribution:
+```{r histogram-reputation-facet, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE,message=TRUE}
+# histogram of the log10-transfored of users reputation per badge and 
+# excluding users with less than 999 reputation 
+users %>%
+  filter(reputation > 999) %>%
+  mutate(reputation=log10(reputation)) %>%
+  inner_join(badges %>% 
+               select(userId, badge) %>% 
+               filter(badge %in% c("Populist", "Great Answer", "Guru", "Great Question", 
+                                   "Good Answer", "Good Question", "Nice Answer", 
+                                   "Nice Question")), by="userId") %>%
+  mutate(badge=factor(badge, levels=c("Populist", "Great Answer", "Guru", 
+                                      "Great Question", "Good Answer", "Good Question", 
+                                      "Nice Answer", "Nice Question"))) %>%
+  ggplot(aes(reputation, group=badge, color=badge, fill=badge)) + 
+  geom_histogram() +
+  xlab("log10 reputation") +
+  theme(legend.position="bottom", legend.text=element_text(size=3)) +   
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.text = element_text(size=12)) +
+  facet_wrap(~badge)
+```
+
+### The What: skills and technology trends
+
+In the following listing we want to find the main technology trends and how skills group together. To this end we first select the top 2k skills by frequency of tagging, compute their pair-wise co-occurrence matrix and run PCA on it.
+```{r the-what-co-occurrence-pca,echo=TRUE,message=FALSE}
+# select the top 2k tags/skills by count
+mainSkills <- tags %>% 
+  top_n(2000, count) %>%
+  rename(skill=tag) %>% 
+  arrange(desc(count))
+
+# what's the proportion to the total?
+100*sum(mainSkills$count)/sum(tags$count)
+
+# select a smaller questions subset matching the main tags
+# to get the results faster ...
+questionSkills <- questions %>% 
+  filter(score > 9 & viewCount > 99 & answerCount > 1)
+# takes ~35s
+tic(sprintf('separating rows with %d', nrow(questionSkills)))
+questionSkills <- questionSkills %>%
+  select(questionId, tags) %>%
+  separate_rows(tags, sep="\\|") %>%
+  rename(skill=tags) %>%
+  inner_join(mainSkills, by="skill") %>%
+  arrange(desc(count)) %>%
+  select(questionId, skill)
+toc()
+
+# takes ~15m if TRUE
+if (FALSE) {
+  tic(sprintf('computing co-occurrence matrix with %d question-skill', 
+              nrow(questionSkills)))
+  X <- crossprod(table(questionSkills[1:2]))
+  diag(X) <- 0
+  toc()
+  saveObjectByName(X, "XCo-occurrence")
+}
+X <- readObjectByName("XCo-occurrence")
+
+# how sparse is it?
+sum(X == 0)/(dim(X)[1]^2)
+
+# compute PCA 
+pca <- prcomp(X)
+```
+
+At this point we can plot the cumulative variability explained up to each principal component. We see that the first four components explain 50% of the variance:
+```{r the-what-pca-variability,echo=TRUE,message=FALSE}
+# let's consider the first 50 components only 
+pc <- 1:50
+
+# plot the variability explained 
+var_explained <- cumsum(pca$sdev^2 / sum(pca$sdev^2))
+qplot(pc, var_explained[pc])
+```
+
+```{r the-what-prepare-visualization,echo=FALSE,message=FALSE}
+# create tibble containing the first four principal components
+pcs <- tibble(skill = rownames(pca$rotation), PC1=pca$rotation[,"PC1"], 
+              PC2=pca$rotation[,"PC2"])
+# highlight the top ten tags
+pcs <- pcs %>%
+  mutate(fontface=ifelse(skill %in% (topTenSkills %>% pull(skill)), 
+                         'bold', 'plain'))
+
+technologies <- c("Blockchain, Cloud, Build & Data Viz",
+                  "Full Stack", 
+                  "Web Frontend & Mobile",
+                  "Microsoft Stack",
+                  "Python & C++",
+                  "Software Engineering",
+                  "Javascript",
+                  "iOS Stack",
+                  "Other")
+
+# choose 9 colors: 2x4 components plus everything else
+colorPalette <- RColorBrewer::brewer.pal(name='Set1', n=9)
+colorSpec <- colorPalette[1:9]
+names(colorSpec) <- technologies
+
+# maximum tags to choose in each direction
+M <- 25
+highlight <- pcs %>% 
+  arrange(PC1) %>% 
+  slice(1:M) %>%
+  mutate(Technology=technologies[1], pc=1)
+
+highlight <- pcs %>% 
+  anti_join(highlight, by="skill") %>%
+  arrange(desc(PC1)) %>% 
+  slice(1:M) %>%
+  mutate(Technology=technologies[2], pc=1) %>%
+  bind_rows(highlight)
+
+highlight <- pcs %>% 
+  anti_join(highlight, by="skill") %>%
+  arrange(PC2) %>% 
+  slice(1:M) %>%
+  mutate(Technology=technologies[3], pc=2) %>%
+  bind_rows(highlight)
+
+highlight <- pcs %>% 
+  anti_join(highlight, by="skill") %>%
+  arrange(desc(PC2)) %>% 
+  slice(1:M) %>%
+  mutate(Technology=technologies[4], pc=2) %>%
+  bind_rows(highlight)
+
+nonHighlight <- pcs %>% 
+  anti_join(highlight, by="skill") %>%
+  mutate(Technology=technologies[9])
+
+# switch to the 3rd and 4rth PCA components
+pcs <- tibble(skill = rownames(pca$rotation), PC3=pca$rotation[,"PC3"], 
+              PC4=pca$rotation[,"PC4"])
+# highlight the top ten tags
+pcs <- pcs %>%
+  mutate(fontface=ifelse(skill %in% (topTenSkills %>% pull(skill)), 'bold', 'plain'))
+
+highlight <- pcs %>% 
+  anti_join(highlight, by="skill") %>%
+  arrange(PC3) %>% 
+  slice(1:M) %>%
+  mutate(Technology=technologies[5], pc=3) %>%
+  bind_rows(highlight)
+
+highlight <- pcs %>% 
+  anti_join(highlight, by="skill") %>%
+  arrange(desc(PC3)) %>% 
+  slice(1:M) %>%
+  mutate(Technology=technologies[6], pc=3) %>%
+  bind_rows(highlight)
+
+highlight <- pcs %>% 
+  anti_join(highlight, by="skill") %>%
+  arrange(PC4) %>% 
+  slice(1:M) %>%
+  mutate(Technology=technologies[7], pc=4) %>%
+  bind_rows(highlight)
+
+highlight <- pcs %>% 
+  anti_join(highlight, by="skill") %>%
+  arrange(desc(PC4)) %>% 
+  slice(1:M) %>%
+  mutate(Technology=technologies[8], pc=4) %>%
+  bind_rows(highlight)
+
+# plot the components in log scale
+highlightLog <- highlight %>% 
+  mutate(PC1=sign(PC1)*log10(abs(PC1)), 
+         PC2=sign(PC2)*log10(abs(PC2)))
+
+nonHighlightLog <- nonHighlight %>% 
+  mutate(PC1=sign(PC1)*log10(abs(PC1)), 
+         PC2=sign(PC2)*log10(abs(PC2)))
+```
+
+The following plot reveals the main technology trends. The top skills are highlighted in bold font-face. The top and bottom ends of the first principal component reveal "Blockchain, Cloud, Build and Data Visualization" (in red) and "Full Stack" (in blue) respectively. While the top and bottom ends of the second principal component reveal "Web Frontend & Mobile" (in green) and "Microsoft Stack" (in purple) respectively. Note that the technology trends were named e.g. "Microsoft Stack" after reviewing all the skills found in those segments and assigning a more general conceptual trend but the resulting groupings are not exact e.g. `c++` appears in the second component "Microsoft Stack" while the third component groups together **mostly** "Python & C++" skills e.g. `python`, `c++11`, `stl`, `boost`, `qt`, `visual-c++`, etc. 
+\
+
+The grouping here is very interesting, The link between cloud and build tools is clear, since most of the cloud technologies are related to and require building and deploying software. Furthermore, it would seem that blockchain software is linked to deploying software in the cloud; likewise there seems to be a link between software deployment, cloud technologies, generating reports and data visualization.
+```{r the-what-visualization,echo=TRUE,message=FALSE} 
+portable.set.seed(1)
+highlightLog %>% 
+  filter(pc %in% c(1, 2)) %>%
+  ggplot(aes(PC1, PC2, label=skill, colour=Technology)) +
+  geom_jitter(alpha = 0.4, size = 2) + 
+  theme(legend.position="bottom", plot.title = element_text(hjust = 0.5), 
+        legend.text=element_text(size=6), legend.title = element_blank()) + 
+  guides(fill = guide_legend(nrow=2)) +
+  xlab(sprintf("sign(PC1) x log10|PC1| - Variance explained %d%%", 
+               round(100*pca$sdev[1]^2 / sum(pca$sdev^2)))) + 
+  ylab(sprintf("sign(PC2) x log10|PC2| - Variance explained %d%%", 
+               round(100*pca$sdev[2]^2 / sum(pca$sdev^2)))) +
+  geom_text_repel(aes(fontface=fontface), segment.alpha = 0.3, size = 3,
+                  force = 7, nudge_x = 0.1, nudge_y = 0.1, seed = 1) +
+  scale_colour_manual(values = colorSpec) +
+  scale_x_continuous(limits=c(-8, 8)) +   
+  scale_y_continuous(limits=c(-8, 8)) +  
+  geom_jitter(data = nonHighlightLog, aes(PC1, PC2), alpha = 0.05, size = 1)
+```
+
+### The Where: putting it in geographical context
+
+The following code, using a valid environment `GOOGLE_API_KEY`^[See instructions here to get a free trial Google API key https://developers.google.com/maps/documentation/javascript/get-api-key] will match all users with location Switzerland and compute their geographic coordinates using Google's geocoding API. We note that Switzerland has a large expatriate english-speaking technology community plus four official Swiss languages, therefore we filter for user `location` containing the Swiss country code `ch` or `switzerland` written in english or written using any of the four official Swiss languages: in German `schweiz`, Italian `svizzera`, French `suisse` and Romansh `svizra` respectively:
+```{r the-where-geocoding,echo=TRUE,message=TRUE}
+# do this only if the file isn't there to avoid costly Google's geocoding calls
+if (!file.exists(filePathForObjectName("UsersCH"))) {
+  # the environment variable GOOGLE_API_KEY is required or simply copy-paste your
+  # google key instead. To obtain a google key, follow the steps outlined here:
+  # https://developers.google.com/maps/documentation/javascript/get-api-key
+  register_google(key=Sys.getenv("GOOGLE_API_KEY"))
+  
+  # get users whose location is Switzerland only
+  usersCh <- users %>%
+    filter(str_detect(tolower(location),
+                      "(\\bch\\b|switzerland|schweiz|svizzera|suisse|svizra)")) %>%
+    arrange(desc(reputation))
+  
+  # get the unique locations and avoid duplicate calls e.g. "Zurich, Switzerland"
+  swissLocations <- usersCh %>%
+    select(location) %>%
+    unique()
+  # WARNING! this code paired with a valid GOOGLE_API_KEY may cost money!
+  swissLocations <- mutate_geocode(swissLocations, location = location)
+  usersCh <- usersCh %>%
+    left_join(swissLocations, by="location")
+  
+  # write the usersCh to disk
+  saveObjectByName(usersCh, "UsersCH")
+}
+usersCh <- readObjectByName("UsersCH")
+stopifnot(nrow(usersCh) == 4235)
+```
+
+```{r the-where-prepare-visualization,echo=FALSE,message=FALSE}
+# get the Swiss users' top answer skills
+topAnswerTags <- answers %>%
+  semi_join(usersCh, by="userId") %>%
+  group_by(userId) %>%
+  summarise(score=max(score)) %>%
+  ungroup() %>%
+  inner_join(answers %>% select(userId, score, questionId), by=c("userId", "score")) %>%
+  inner_join(questions %>% select(questionId, tags), by="questionId") %>%
+  group_by(userId) %>%
+  summarise(questionId=first(questionId), score=first(score), tags=first(tags)) %>%
+  ungroup() %>%
+  mutate(type='answer') %>%
+  arrange(desc(score))
+
+# otherwise get the Swiss users' top question tags
+topQuestionTags <- questions %>%
+  semi_join(usersCh, by="userId") %>%
+  anti_join(topAnswerTags, by="userId") %>%
+  group_by(userId) %>%
+  summarise(score=max(score)) %>%
+  ungroup() %>%
+  inner_join(questions %>% select(userId, score, questionId, tags), by=c("userId", "score")) %>%
+  group_by(userId) %>%
+  summarise(questionId=first(questionId), score=first(score), tags=first(tags)) %>%
+  ungroup() %>%
+  mutate(type='question') %>%
+  arrange(desc(score))
+
+# merge the two data sets
+usersChTop <- topAnswerTags %>%
+  bind_rows(topQuestionTags) %>%
+  mutate(type=as.factor(type)) %>%
+  left_join(usersCh %>% select(userId, location, lon, lat), by="userId") %>%
+  separate_rows(tags, sep="\\|") %>%
+  rename(skill=tags) %>%
+  inner_join(mainSkills, by="skill") %>%
+  select(questionId, userId, score, skill, type, location, lon, lat)
+
+# link to the principal component highlights, remove others
+usersChTop <- usersChTop %>%
+  left_join(highlight %>% select(skill, pc, Technology), by=c("skill")) %>%
+  select(questionId, userId, score, skill, Technology, type, location, lon, lat) %>%
+  filter(!is.na(Technology) & Technology != technologies[9]) %>%
+  arrange(desc(score))
+
+# do this only if the file isn't there to avoid costly Google map calls
+if (!file.exists(filePathForObjectName("SwissMap"))) {
+  # the environment variable GOOGLE_API_KEY is required or simply copy-paste your
+  # google key instead. To obtain a google key, follow the steps outlined here:
+  # https://developers.google.com/maps/documentation/javascript/get-api-key
+  register_google(key=Sys.getenv("GOOGLE_API_KEY"))
+  
+  # get Google map of Switzerland
+  center <- c(lon = 8.227512, lat = 46.818188)
+  map <- get_googlemap(center = center, zoom = 7,
+                       color = "bw",
+                       maptype = "terrain",
+                       style = paste("feature:road|visibility:off&style=element:labels|",
+                                     "visibility:off&style=feature:administrative|visibility:on|lightness:60", 
+                                     sep=""))
+  saveObjectByName(map, "SwissMap")
+}
+map <- readObjectByName("SwissMap")
+```
+
+The following plot depicts the technology trends discovered in the previous analysis and now shown in geographical context for Switzerland. We note that Zurich is becoming a true technology center in Europe as all the trends are there. The most prominent data point by score in Switzerland was reached by an user located in Zurich posting on Full Stack development. We can also see that the east and south of Switzerland i.e. the Tessin region has much lower activity technology-wise therefore it wound't be a wise decision looking for technology jobs there. The data points appearing in the center of Switzerland correspond to users who were not precise in providing their specific location i.e. they specified their locations to "Switzerland" and that's the center of Switzerland but technology-wise we should not expect to find anything in the middle of the mountains. Geneve city was surprisingly less active in quantity and quality or may be that users there didn't provide their location precisely enough. The city of Bern shows two high scoring data points connected to the technology trends Microsoft Stack and Python & C++ respectively. We can also note several users in isolated Swiss regions working on `ios` i.e. potentially building iPhone applications in remote areas which would make sense.
+```{r the-where-visualization, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=FALSE}
+# plot the top technology trends in Geo-context in Switzerland
+ggmap(map) + 
+  scale_colour_manual(values = colorSpec) +
+  geom_point(data=usersChTop, aes(x=lon, y=lat, colour=Technology, size=score), 
+             position = position_jitterdodge(jitter.width=0.01, jitter.height=0.01, 
+                                             seed=1)) +
+  theme(plot.title = element_text(hjust = 0.5), legend.text=element_text(size=8), 
+        legend.title = element_blank(), legend.position="bottom")
+```
+
+The top ten most prominent post data points in Switzerland are revealed using the following code:
+```{r the-where-top-ten, echo=TRUE, message=FALSE}
+prettyPrint(
+  usersChTop %>%
+    top_n(10, score) %>%
+    arrange(desc(score))
+)
+```
+
+### The How: rating user skills
+
+One of the biggest challenges in this project was without any doubt to come up with a clean approach to assign skill ratings to users. First because there is no explicit link between users and skills and second because there isn't any apparent way to quantify a rating for a given user and skill. From the data exploration we know that questions contain `tags` (i.e. skills) and they also contain the posting `userId`. We also know that answers link to the parent question via the `questionId` and to the posting user via the `userId`. Therefore, through questions and answers we can link users and skills; namely the questions asked by an user: `user -> question -> tags` and the answers posted by an user: `user -> answer -> question -> tags`. 
+\
+
+But what about the ratings? This is where the `badges` dataset comes into play. Badges^[For a detailed description of the badge system see https://stackoverflow.com/help/badges.] are awarded to users for different reasons including how good an answer or question is, this "how good" is backed up by a quantity which is the answer or question score (i.e. originating from the up or down votes), and thus we have a possible solution. The idea for filling the ratings would be to follow the same ordering provided by the badges system which is categorized with three "quality" class levels: `gold`, `silver` and `bronze`. We'd intuitively assume that e.g. an user that posted an answer which was awarded with `gold` for a question related to certain skills should be rated higher in those skills than an user asking a `silver` question on those same skills. But, would this badges ordering ensure significantly higher quality users? This is what we're about to find out in the following exploratory and visualization analysis.
+\
+
+We'd like to validate the hypothesis of whether the user quality would be significantly higher or better given that he has been awarded a certain level badge. One possible way to do this is to use the user reputation which is an overall quantity calculated independently of specific questions and answers. We wouldn't want a model fed with "lucky" users landing with a very high rating for a skill. We'd also like to validate the ordering i.e. is the reputation of users awarded with gold answer badges in average significantly higher than that of users with silver answer or question badges?
+\
+
+```{r rating-significance-prep, fig.height=8, fig.width=8, echo=FALSE, message=FALSE}
+# Function to accumulates all badges into a final dataset. Every next call
+# should pass the accumulated results so that they can be excluded from 
+# the selection.
+#
+# @param aBadge the badge to filter for. 
+# @param acc the accumulated results (result of previous call to this function).
+# @param N the top N values to pick e.g. 1500
+#
+accumulateBadges <- function(aBadge, acc=NULL, N=1500) {
+  res <- NULL
+  # handle this non standard case separately
+  if (aBadge == "Other Answers") {
+    res <- users %>% 
+      anti_join(acc %>% select(userId) %>% unique(), by="userId") %>%
+      semi_join(answers %>% filter(0 <= score & score < 10) %>% 
+                   select(userId) %>% unique(), by="userId") %>%
+      mutate(class="bronze", badge=aBadge) %>%
+      select(userId, class, badge, reputation) %>%
+      top_n(N, reputation) %>%
+      bind_rows(acc)
+        
+  } else {
+    # this is the case for the first time
+    if (is.null(acc)) {
+      res <- users %>% 
+        inner_join(badges %>% filter(badge == aBadge) %>% 
+                     select(userId, class, badge) %>% unique(), by="userId") %>%
+        select(userId, class, badge, reputation) %>%
+        top_n(N, reputation)    
+    } else {
+      res <- users %>% 
+        anti_join(acc %>% select(userId) %>% unique(), by="userId") %>%
+        inner_join(badges %>% filter(badge == aBadge) %>% 
+                     select(userId, class, badge) %>% unique(), by="userId") %>%
+        select(userId, class, badge, reputation) %>%
+        top_n(N, reputation) %>%
+        bind_rows(acc)
+    }
+  }
+  # sort by factor ordering
+  res$class <- factor(as.character(res$class), levels=c("gold", "silver", "bronze"))
+  return(res)
+}
+
+# let's check whether the badge system provides qualitatively a significative users' 
+# segregation w.r.t reputation using answers and questions. Compare the users by badge
+# gold vs silver vs bronze badges.
+
+N <- 1500
+badgesOrder <- c("Populist", "Great Answer", "Guru", "Good Answer", 
+                 "Nice Answer", "Other Answers", "Great Question",  
+                 "Good Question", "Nice Question")
+
+# accumulate all badge selections into a complete set
+for (i in 1:length(badgesOrder)) {
+  if (i == 1) {
+    comp <- accumulateBadges(badgesOrder[i])
+  } else {
+    comp <- accumulateBadges(badgesOrder[i], comp)
+  }
+}
+
+# log10 transform reputation and sort by factor ordering
+comp <- comp %>%
+  mutate(reputation=log10(reputation)) %>%
+  mutate(badge = factor(badge, levels=badgesOrder))
+```
+
+Here we take a look at the average reputations for users who have been granted the different badges of interest. The result gives us a rough idea of the order we are after. Note that we previously saw the users reputation to be highly skewed so we choose the median as measure of central tendency instead of the mean. The result reveals that users granted with answer badges depict in average higher reputations than those granted question badges. We also note that users granted gold badges have in average higher reputation than that of users granted silver badges, similarly users granted silver badges tend to have higher reputations in average than users granted bronze badges.
+```{r rating-significance-avg, echo=TRUE, message=TRUE} 
+# checkout the average reputation ordering by badge to get an idea though
+# this is not the exact final ordering used due to the exclusion system.
+prettyPrint(
+  users %>%
+    inner_join(badges %>% select(userId, class, badge) %>% unique(), by="userId") %>%
+    filter(badge %in% badgesOrder) %>%
+    group_by(class, badge) %>%
+    summarise(avg_reputation=median(reputation)) %>%
+    arrange(desc(avg_reputation))
+, latex_options = c("striped"))  
+```
+
+Note that since the `log` transformation preserves the order of the data i.e. if $x > y$ then $\text{log}(x) > \text{log}(y)$ and brings it to a nicer scale (e.g. for plotting) we're going to do conduct the following analysis using a `log10` transformation of the users reputation.
+\
+
+The following plot reveals the user reputation ordering difference between gold, silver and bronze for answer badges. We see that the average within each group matches the expected level of the class i.e. users granted gold answer badges depict higher reputation average than those granted with silver and bronze answer badges. The vertical dashed lines show the median for each class:
+```{r rating-significance-answers-plot, echo=TRUE, message=TRUE}
+# create color specification for the different badges
+colorSpec <- c("#f9a602", "#c0c0c0", "#cd7f32")
+names(colorSpec) <- c("gold", "silver", "bronze")
+
+summaryRep <- comp %>%
+  group_by(class, badge) %>%
+  summarise(median=median(reputation))
+comp %>% 
+  filter(badge %in% c("Great Answer", "Good Answer", "Nice Answer")) %>%
+  ggplot(aes(reputation, colour = class, fill = class, group = badge)) +
+  xlab(label = "log10 reputation") +
+  geom_histogram(position = "dodge", bins = 40) +
+  scale_fill_manual(values = colorSpec) +
+  scale_colour_manual(values = colorSpec) +
+  geom_vline(data=summaryRep %>% filter(badge %in% c("Great Answer", "Good Answer", 
+                                                     "Nice Answer")), 
+             aes(xintercept=median, color=class), linetype="dashed")
+```
+
+The results depicted above are in a way incomplete. In order to assign skill ratings to users we need to also exclude users that were previously rated on those skills i.e. there should be no duplicate and ambiguous rating for the same user and skill. But how do we choose the rating among all possible? We can agree on the following strategy: an user reaching a higher rating level with respect to a skill, such higher rating takes precedence over other possible ratings on that skill. That's it, an user is rated with the highest rating we have observed among all posts that relate to that skill. Therefore, we find the users in the highest badge and class level for a skill and assign the highest rating e.g. 5.0. Then, excluding those users that were already rated in those skills, we find the users in the next highest level for that skill and assign the second highest rating e.g. 4.5 and so on. Therefore, we'd implement an iterative exclusion process that grants user with ratings from 5.0 to 1.5 in steps of 0.5 i.e. `seq(5.0, 1.5, by=-0.5)`. 
+\
+
+We'd like to assses the significance of average reputation differences per badge and class group and for the top N users using this exclusion process. We choose the top N samples per group because this is the only way (relatively quick computing time-wise) to ensure that users from the top of higher-rated groups do not slip randomly into lower-rated groups. We also prefer not to do the exclusion process exhaustively for all the data because it would take a long time to compute. We should note that picking the top N users by reputation in each badge and class group invalidates the independence assumption required to resort to the Cental Limit Theorem (CLT)^[https://en.wikipedia.org/wiki/Central_limit_theorem] for doing statistical inference i.e. building confidence intervals to compare two (actually all groups pair-wise) population averages i.e. in this case we're not choosing in-group samples randomly. Furthermore, for skewed data, the measure of central tendency of choice is the sample median and standard errors can not be calculated for distribution-free statistics. That said, and in order to compare the reputation medians among the different groups, we construct the 95% confidence intervals using the nonparametric bias-corrected and accelerated bootstrap interval $BC_a$, a statistically robust algorithm for producing highly accurate confidence limits from a boostrap distribution see [@diciccio1996] and [@davison1997].
+\
+
+The following listing compares the median of the reputation for the different groups and for the top N users using the $BC_a$ bootstrap method. We required extending `ggplot2` with custom notches (a confidence interval feature for boxplots) computed using the $BC_a$ method^[See the question https://stackoverflow.com/questions/59504775/]. The boxplots are also enriched with the mean statistic (the solid circle shape) and dashed lines through the median for each group. With the guiding help of the dashed lines we observe that no confidence interval notches overlap and therefore the median reputation for each group can be assumed to be significantly different, higher (i.e. better) or lower than the others. A new non official Stack Overflow badge was introduced with name "Other Answers" to account for answers with scores below the levels that are officially awarded by Stack Overflow but still relevant to our ratings because answers, despite lower in score, still carry more weight than questions: 
+```{r rating-significance-plot, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE}
+# bootstrap the median using 2x replications for the 1.5k users
+B <- 2*N
+
+# extend ggplot with a new boxplot stat_summary function to use bootstrapped BCa 
+# for the notch confidence intervals
+bootNotch <- function(values) {
+  # usual quantile values
+  res = data.frame(t(boxplot(values, plot=FALSE)$stats))
+  colnames(res) = c("ymin","lower","middle","upper","ymax")
+  
+  # bootstrap and get lower + upper notches
+  ci <- boot.ci(boot(values, statistic = function(x, index) median(x[index]), R=B), 
+                type="bca")
+  res$notchlower = ci$bca[4]
+  res$notchupper = ci$bca[5]
+  return(res)
+}
+
+# since we're extending the boxplot, need to provide outliers calculation as well
+outlierNotch <- function(values) {
+  return(boxplot(values, plot=FALSE)$out)
+}
+
+# compute a summary frame of the data containing mean and median
+summaryRep <- comp %>%
+  group_by(badge, class) %>%
+  summarise(mean=mean(reputation),
+            median=median(reputation))
+
+# set the seed again (we need it here to get predictable bootstrap results)
+portable.set.seed(1)
+# plot the badge & class combinations to match an ordering for the ratings
+comp %>% 
+  left_join(summaryRep, by=c("class", "badge")) %>%
+  ggplot(aes(x=badge, y=reputation, colour=class, group=badge)) +
+  ylab(label = "log10 reputation") +
+  theme(legend.position="bottom", plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=12), 
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  stat_summary(fun.data = bootNotch, geom = "boxplot", notch = T) +
+  stat_summary(fun.y = outlierNotch, geom = "point") +
+  stat_summary(fun.y = mean, geom = "point", shape = 20, size = 5) +
+  scale_colour_manual(values = colorSpec) +
+  geom_hline(data=summaryRep, aes(yintercept = median, color = class), 
+             linetype = "dashed") +
+  geom_jitter(alpha=0.05)
+```
+
+No other ordering of badges and class levels produces the monotonically decreasing median and mean reputation distribution for the users depicted in the figure above, therefore we use that ordering as reference to build our ratings dataset. Also note that answer badges are higher than question badges in average reputation regardless of the class level. The final ordering is summarized in the following table^[For more information on the Stack Overflow badges see https://stackoverflow.com/help/badges]. Note that we filter the last three rating levels "Other Questions" by `viewCount` being greater than 2.5k views, and thus we only consider question that have attracted certain level of interest:
+```{r ratings-order-table,message=TRUE}
+local({
+  tbl <- data.frame(
+    Badge = c("Populist", 
+              "Great Answer", 
+              "Guru",
+              "Good Answer",
+              "Nice Answer",
+              "Other Answers",
+              "Other Answers",
+              "Great Question",
+              "Good Question",
+              "Nice Question",
+              "Other Questions",
+              "Other Questions",
+              "Other Questions"
+              ),
+    
+    Class = c("gold", 
+              "gold",
+              "silver", 
+              "silver",
+              "bronze",
+              "",
+              "",
+              "gold",
+              "silver",
+              "bronze",
+              "",
+              "",
+              ""),
+    
+    Rating = c("5.0", 
+               "5.0", 
+               "4.5",
+               "4.5",
+               "4.0",
+               "3.5",
+               "3.5",
+               "3.0",
+               "2.5",
+               "2.5",
+               "2.5",
+               "2.0",
+               "1.5"),
+    
+    Conditions = c("", 
+                   "",
+                   "", 
+                   "",
+                   "", 
+                   "Answers with score between [5, 10)",
+                   "Answers with score between [0, 5)",
+                   "", 
+                   "", 
+                   "",
+                   "Questions with score between [5, 10) & viewCount > 2500",
+                   "Questions with score between [2, 5)  & viewCount > 2500",
+                   "Questions with score between [0, 2)  & viewCount > 2500")
+  , stringsAsFactors = F)
+  
+  links <- tibble(Badge=c("Populist", 
+                          "Great Answer", 
+                          "Guru", 
+                          "Good Answer",
+                          "Nice Answer",
+                          "Great Question",
+                          "Good Question",
+                          "Nice Question"),
+                 url=c("https://stackoverflow.com/help/badges/62/populist", 
+                       "https://stackoverflow.com/help/badges/25/great-answer",
+                       "https://stackoverflow.com/help/badges/18/guru", 
+                       "https://stackoverflow.com/help/badges/24/good-answer",
+                       "https://stackoverflow.com/help/badges/23/nice-answer", 
+                       "https://stackoverflow.com/help/badges/22/great-question", 
+                       "https://stackoverflow.com/help/badges/21/good-question", 
+                       "https://stackoverflow.com/help/badges/20/nice-question"))  
+  
+  # tbl <- tbl %>%
+  #   inner_join(links, by="Badge") %>%
+  #   mutate(Badge = paste0("\\href{", url, "}{", Badge, "}")) %>%
+  #   bind_rows(tbl %>% anti_join(links, by="Badge")) %>%
+  #   select(Badge, Class, Rating, Conditions)
+  
+  # kable(tbl, "latex", escape = F, booktabs = T) %>% 
+  
+  kable(tbl, "latex", booktabs = T) %>% 
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = T) %>% 
+    column_spec(1, width = "3cm") %>% 
+    column_spec(4, width = "9cm") %>% 
+    row_spec(0, bold = T)
+})
+```
+
+
+\
+The code for generating the `ratings` dataset is implemented in the second half of the `create_dataset.r` script. Assembling the `ratings` dataset proved to be a very challenging task on its own too because it required first replicating the badge selection criteria documented in the definition of the badges and more importantly because of bringing the tags (or skills) into first normal form^[See https://en.wikipedia.org/wiki/First_normal_form] i.e. tags are pipe-separated and we need them in a tag per row format instead, to be able to use relational operators. For this purpose, we used the function `tidyr::separate_rows` e.g. `tidyr::separate_rows(tags, sep="\\|")`. However, the expansion of millions of rows leads to hundreds of millions of rows which in a single thread would take a very long time to compute and easily overflow my 32GB system RAM. Therefore we again leveraged on the multi-core parallel architecture^[Using `parallel::mclapply(...)` see https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html] and a blocking strategy to come up with a parallel and memory-bound divide and conquer approach which can be found in the `create_dataset.r` function `parBlockSeparate(...)` implementation. We can control the computation time and memory used with the parameters `ncore` and `blockSize` respectively.
+\
+
+We successfully compiled the `ratings` dataset and it includes the following main columns: `userId`, `skill` and `rating`; other columns were included for debugging, traceability^[To find which question or answer lead an user to receive a given rating.] and as model features e.g. `firstPostDate` which will be discussed later. 
+```{r structure-ratings,echo=TRUE,message=TRUE}
+# read the ratings dataset
+ratings <- readObjectByName("Ratings")
+
+prettyPrint(head(glimpse(ratings)))
+```
+
+We can see the measures of central tendency and dispertion of the ratings using the following code:
+```{r ratings-rating-avg, echo=TRUE, message=TRUE}
+# check the average
+prettyPrint(
+  ratings %>%
+    summarise(median = median(rating), mean = mean(rating), sd = sd(rating))
+, latex_options = c("striped"))
+```
+
+The following histogram plot depicts the distribution of the `ratings` dataset. We see that the lowest rating is 1.5 and goes by steps of 0.5 all the way to 5.0:
+```{r ratings-rating-dist, echo=TRUE, message=TRUE}
+# checkout the ratings histogram, it's nicely bell shaped
+ratings %>% 
+  ggplot(aes(rating, fill=..x..)) + geom_histogram() +
+  scale_x_continuous(breaks = seq(1.5, 5, by=0.5)) +
+  scale_fill_gradient("Legend", low = "#E41A1C", high = "#4DAF4A")
+```
+
+```{r ratings-sig-comp-prep, echo=FALSE, message=FALSE}
+# repeat the analysis after having the ratings, use BCa
+portable.set.seed(1)
+# repeat the analysis after having the ratings, use BCa
+comp <- ratings %>%  
+  left_join(users %>% select(userId, reputation) %>% unique(), by="userId") %>%
+  mutate(reputation=log10(reputation)) %>%
+  group_by(rating) %>%
+  sample_n(N) %>%
+  ungroup()
+
+summaryRep <- comp %>%
+  group_by(rating) %>%
+  summarise(mean=mean(reputation),
+            median=median(reputation))
+```
+
+At this point we can also assess how significantly different our final ratings are with respect to the users average reputation. Now we can take N random samples from each rating group since the exclusion process was achieved exhaustively. We again use the bias-corrected and accelerated bootstrap interval $BC_a$ to check for significance. We see that several rating groups do not seem to be significatively different with respect to user reputation averages; namely, the $BC_a$ confidence interval notches clearly overlap for ratings 3, 3.5, 4, and 4.5:
+```{r ratings-sig-comp, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE}
+# set the seed again
+portable.set.seed(1)
+comp %>%
+  ggplot(aes(x=rating, y=reputation, colour=rating, group=rating)) +
+  ylab(label = "log10 reputation") +
+  theme(legend.position="bottom", plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=12), 
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  stat_summary(fun.data = bootNotch, geom = "boxplot", notch = T) +
+  stat_summary(fun.y = outlierNotch, geom = "point") +
+  stat_summary(fun.y = mean, geom = "point", shape = 20, size = 5) +
+  scale_color_gradient("Legend", low = "#E41A1C", high = "#4DAF4A") +
+  geom_hline(data=summaryRep, aes(yintercept = median, color = rating), 
+             linetype = "dashed", alpha=0.5) +
+  geom_jitter(alpha=0.1)
+```
+
+Visually comparing the confidence intervals for possible overlap is a necessary condition but often not a sufficient condition of significance. Therefore, we run the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for independent samples i.e. to determine the significance of the difference in population median between unpaired groups. The Wilcoxon test is nonparametric and doesn't require the normality assumption of the data which is exactly our case here. The following listing executes the Wilcoxon test on all ratings pair-wise. The results reveals that the median of the reputations for the groups corresponding to rating pairs `3.5-4.0` and `4.0-4.5` are not significatively different, whereas all other rating pairs are significatively different at 95% confidence level. However, we note that pair `4.0-4.5` is significatively different at 82% confidence level:
+```{r ratings-sig-wilcoxon, echo=TRUE, message=TRUE}
+# generate all possible pair-wise rating combinations
+c <- combn(seq(1.5, 5.0, by=0.5), m=2)
+# print the pairs whose p-value is greater than 0.05 i.e. 
+# the median difference between groups is not significative at
+# 95% confidence
+for (i in 1:ncol(c)) {
+  res <- comp %>%
+    filter(rating == c[1,i] | rating == c[2,i]) %>%
+    wilcox.test(reputation~rating, data=., paired=F, conf.int=T)
+  if (res$p.value > 0.05) {
+    cat(sprintf(paste0("Median rep. for users with rating ",
+                       "%.1f and %.1f is NOT sig. ", 
+                       "diff. with p-value=%.5f\n"), 
+                c[1,i], c[2,i], res$p.value))
+  }
+}
+```
+
+# Modeling approach
+
+In this section we'll build a recommender system for predicting user-skill ratings using the collaborative filtering (CF) technique. We'll explore a simpler baseline method that discounts multiple effects or bias `b`'s and then move to the more advanced model-based latent factor low-rank matrix factorization (LRMF) method implemented using the stochastic gradient descent (SGD) algorithm. The loss function we'll employ to evaluate the predictions in both cases is the root mean squared error (RMSE) where $r_{i,j}$ is the true rating and $\hat{r_{i,j}}$ is our predicted user skill rating for user $i$ and skill $j$, we'll reuse the `Metrics::rmse(...)` implementation:
+
+$$
+\text{RMSE} = \sqrt{\frac{1}{N} \sum_{i,j} (\hat{r}_{i,j} - r_{i,j})}
+$$
+Let's get some basic information about the `ratings` dataset e.g. sparsity. We have 199.8k users and 2k skills^[These are the top 2k skills we have used before that account for 82.3% of the total taggings.] and a highly sparse dataset i.e. only about 1.4% of all the possible user skill ratings:
+```{r modeling-approach-basic, echo=TRUE, message=TRUE}
+# what's the number of unique users, skills and how sparse is it?
+prettyPrint(
+  ratings %>% 
+    summarise(users = n_distinct(userId), 
+              skills = n_distinct(skill),
+              n = n()) %>%
+    mutate(sparsity=sprintf("%.1f%%", 100*n / (users*skills))) %>%
+    select(users, skills, sparsity)
+, latex_options = c("striped"))
+```
+
+We start by separating the `ratings` dataset into training and test sets as shown in the following listing. We will use the train set for calibration (i.e. cross validation) and training and the test set exclusively for out-of-sample evaluation of the models:
+```{r modeling-approach-split, echo=TRUE, message=TRUE}
+# split the ratings dataset into separate train and test sets
+portable.set.seed(1)
+testIndex <- createDataPartition(y = ratings$rating, times = 1,
+                                 p = 0.1, list = FALSE)
+trainSet <- ratings[-testIndex,]
+tmp <- ratings[testIndex,]
+
+# make sure userId and skill in test set are also in train set
+testSet <- tmp %>%
+  semi_join(trainSet %>% select(userId) %>% unique(), by="userId") %>%
+  semi_join(trainSet %>% select(skill) %>% unique(), by="skill")
+
+# add rows removed from test set back into the train set
+removed <- tmp %>%
+  anti_join(testSet, by=c("userId", "skill"))
+
+trainSet <- trainSet %>% 
+  bind_rows(removed)
+rm(tmp, removed)
+
+# test the results, the two sets must add up
+stopifnot(nrow(trainSet) + nrow(testSet) == nrow(ratings))
+
+# how many rows in the training set?
+nrow(trainSet)
+# how many rows in the test set?
+nrow(testSet)
+```
+
+## Baseline
+
+To get a benchmark and idea for what level of RMSE we can reach, we start by exploring the simpler but very effective baseline model. In our model we'll account for the ratings' gobal mean $\mu$, user effects $b_i$, skill effects $b_j$, and in addition a possible way to model temporal effects: smoothing the amount of week blocks since an user first posted about a specific skill to the time of the post rating or, put more intuitively, the elapsed time since an user started gaining experience in a skill to the time of the current rating. We call this effect the user skill experience effect $b_e$. We'll also employ regularization $\lambda$ to penalize the contribution of effects with few elements i.e. the penalized least squares. Our baseline model is then specified using the following cost function:
+
+$$
+J_{\text{baseline}} = \frac{1}{N} \sum_{i,j} (r_{i,j} - (\mu + b_i + b_j + f_{\text{smooth}}(b_e)))^2 + \lambda \left( \sum_{i}b_i^2 + \sum_{j}b_j^2 \right)
+$$
+
+We start building the baseline model with just the average. Note that we are using only the training set:
+```{r baseline-just-the-mean, echo=TRUE, message=TRUE}
+# global average
+mu <- mean(trainSet$rating)
+# compute predictions and RMSE
+rmseResults <- tibble(method = "Just the average", 
+                      RMSE = Metrics::rmse(trainSet$rating, mu))
+prettyPrint(
+  rmseResults
+, latex_options = c("striped"))
+```
+
+We extend our baseline model to account for the user effects $b_i$ and using a $\lambda=4$^[A few values of $\lambda$ were manually tried and $\lambda=4$ was the best.]:
+```{r baseline-user-effects, echo=TRUE, message=TRUE}
+# set the regularization parameter
+lambda <- 4
+# compute regularized user effects
+userEffects <- trainSet %>%
+  group_by(userId) %>%
+  summarize(b_i = sum(rating - mu)/(n() + lambda))
+# compute predictions and RMSE
+predictedRatings <- trainSet %>%
+  left_join(userEffects, by='userId') %>%
+  mutate(pred=mu + b_i) %>%
+  pull(pred)
+rmseResults <- bind_rows(rmseResults,
+                         tibble(method="Regularized User Effects",
+                                RMSE = Metrics::rmse(predictedRatings, 
+                                                     trainSet$rating)))
+prettyPrint(
+  rmseResults
+, latex_options = c("striped"))
+```
+
+We extend the baseline model to account for the skill effects too $b_j$:
+```{r baseline-skill-effects, echo=TRUE, message=TRUE}
+# compute regularized skill effects
+skillEffects <- trainSet %>%
+  left_join(userEffects, by='userId') %>%
+  group_by(skill) %>%
+  summarize(b_j = sum(rating - (mu + b_i))/(n() + lambda))
+# compute predictions and RMSE
+predictedRatings <- trainSet %>%
+  left_join(userEffects, by='userId') %>%
+  left_join(skillEffects, by='skill') %>%
+  mutate(pred=mu + b_i + b_j) %>%
+  pull(pred)
+rmseResults <- bind_rows(rmseResults,
+                         tibble(method="Regularized User + Skill Effects",
+                                 RMSE = Metrics::rmse(predictedRatings, 
+                                                      trainSet$rating)))
+prettyPrint(
+  rmseResults
+, latex_options = c("striped"))
+```
+
+At this point we are in a place to account for more interesting effects. We consider the timestamp `firstPostDate` when an user made a post connected to a skill for the first time. We include this timestamp in every rating since it's an attribute that applies to every unique `userId`, `skill` combination and it's the input needed for generating the new feature: elapsed time in week blocks since the first time the user posted about the rated skill. The elapsed time in week blocks is calculated using the code `week_block_30 = ceiling(as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock)))` with the help of `lubridate` package's functions `lubridate::as.duration`^[See https://lubridate.tidyverse.org/reference/duration.html], the interval creation operator `%--%`^[See https://lubridate.tidyverse.org/reference/interval.html] and duration in weeks `lubridate::dweeks`^[See https://lubridate.tidyverse.org/reference/duration.html].
+\
+
+The following plot computes the effects $b_e$ after accounting for all other previous effects and illustrates how strong this gained experience temporal effect is. We note how the effect has a relatively big range and a potential impact to the RMSE of approximately 0.4. We should also note how interesting this is, from the time the user first starts looking at a skill, the effect starts increasing until it reaches a peak on approximately 2.5 times 30 week blocks i.e. approximately 1.5 years; according to our plot below this is the average experience time needed for an user to reach her peak rating for a skill. After the peak rating is reached, we notice that the experience gained effect reaches a plateau and starts to fluctuate meaning users either: continue improving that skill or move on to other skill topics or simply the skill becomes irrelevant. There could also be a changing job or projects effect involved:
+```{r baseline-temp-effects-plot, echo=TRUE, message=TRUE}
+# show the effects of number of week blocks since first post 
+weeksBlock <- 30
+# this week blocks corresponds approximately to 7 months
+round(weeksBlock / 4.34524)
+# show the gaining experience over time effects 
+trainSet %>%
+  left_join(skillEffects, by='skill') %>%
+  left_join(userEffects, by='userId') %>%
+  mutate(residual=rating - (mu + b_i + b_j)) %>%
+  mutate(week_block_30 = ceiling(
+    as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock))) %>%
+  arrange(desc(week_block_30)) %>%
+  group_by(week_block_30) %>%
+  summarise(b_e_Effect=mean(residual)) %>%
+  ggplot(aes(week_block_30, b_e_Effect)) + geom_point() + 
+  geom_smooth(color="red", span=0.3, method.args=list(degree=2))
+```
+
+We then add the $b_e$ effect to our model:
+```{r baseline-temp-effects, echo=TRUE, message=TRUE}
+# fit a loess smoothing to model the "experience gained" temporal effect
+weeksBlockFit <- trainSet %>%
+  left_join(userEffects, by='userId') %>%
+  left_join(skillEffects, by='skill') %>%
+  mutate(residual=rating - (mu + b_i + b_j)) %>%
+  mutate(week = ceiling(
+    as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock))) %>%
+  group_by(week) %>%
+  summarise(residual=mean(residual)) %>%
+  loess(residual~week, data=., span=0.3, degree=2)
+
+# compute predictions and RMSE
+predictedRatings <- trainSet %>%
+  left_join(userEffects, by='userId') %>%
+  left_join(skillEffects, by='skill') %>%
+  mutate(week = ceiling(
+    as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock))) %>%
+  mutate(pred=mu + b_i + b_j + predict(weeksBlockFit, .)) %>%
+  pull(pred)
+rmseResults <- bind_rows(rmseResults,
+                         tibble(method="Regularized User + Skill + Experience Effects",
+                                RMSE = Metrics::rmse(predictedRatings, 
+                                                     trainSet$rating)))
+prettyPrint(
+  rmseResults
+, latex_options = c("striped"))
+```
+
+We reached an impressive RMSE=`0.6126687` in-sample. Let's see how our baseline model performs out-of-sample using the test set:
+```{r baseline-test-rmse, echo=TRUE, message=TRUE}
+## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
+predictedRatings <- testSet %>%
+  left_join(userEffects, by='userId') %>%
+  left_join(skillEffects, by='skill') %>%
+  mutate(week = ceiling(
+    as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock))) %>%
+  mutate(pred=mu + b_i + b_j + predict(weeksBlockFit, .)) %>%
+  pull(pred)
+rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
+cat(sprintf("baseline RMSE on test data is %.9f\n", rmseValue))
+# check that we get reproducible results
+stopifnot(abs(rmseValue - 0.632744751) < 1e-9)
+```
+
+We reached an impressive out-of-sample RMSE=`0.632744751`. Note that we haven't calibrated this baseline model properly, we've simply manually experimented with the hyper-parameters: $\lambda$, `weeksBlock`, loess `span` and `degree` and found the following best hyper-parameters combination for illustrative purposes:
+
+* Lambda $\lambda=4$
+* `weeksBlock=30` number of week blocks between user's first exposure to the skill and the time of the rating.
+* Loess temporal model smoothing parameter `span=0.3`.
+* Loess temporal model `degree=2`.
+
+Although we find this modeling approach truly fascinating, we could keep on exploring, adding features and accounting for more interesting effects that would lower our RMSE even further^[For example, add as feature the number of user posts for a skill or the number of answers to questions ratio for a skill, etc.]; adding so many features increases model complexity and hinders usability in practice. Notice that in order to predict user-skill ratings using our baseline model we require the user to inform us with the elapsed time in 30 week blocks since she first started looking at a skill, as this is a required predictor variable of our model. At this point we have a baseline, reference RMSE and we can move on to a more advanced model that only requires the past ratings, nothing else, to learn and to make predictions.
+
+## Low-Rank Matrix Factorization
+
+In this section we present a recommender system for predicting user skill ratings using the collaborative filtering (CF)^[https://en.wikipedia.org/wiki/Collaborative_filtering] technique. More specifically we'll implement the model-based low-rank matrix factorization (LRMF) method see [@10.1145/1401890.1401944] and [@10.1109/MC.2009.263]. The principle is that there are latent structures in the data that once revealed, we have a low-dimensional representation we can use to make automatic predictions, in this case user skill rating predictions. The low-dimensional representation we obtain using LRMF is equivalent to computing the singular value decomposition SVD^[https://en.wikipedia.org/wiki/Singular_value_decomposition] on the dense ratings matrix representation. However, this later approach is impractical and prohibitive when the dimensions of the dense representation are too large and the system is very sparse as it's in our case.
+\
+
+Our algorithm will learn and encode a low-dimensional representation of the ratings within two matrices P and Q. P is a matrix of K latent rows (or features) and N columns corresponding to each distinct user. While Q is a matrix of K latent rows and M columns corresponding to each distinct skill. Note that we have encoded the two matrices in such a way that all matrix computations are done on the columns i.e. the dimensions corresponding to users and skills. Doing so we match R's default^[See https://cran.r-project.org/web/packages/reticulate/vignettes/arrays.html] column-major^[See https://en.wikipedia.org/wiki/Row-_and_column-major_order] order to achieve the best possible performance i.e. operate on contiguous memory and avoid costly memory striding operations. Our LRMF cost function is then defined as follows:
+$$
+\begin{aligned}
+J_{P,Q} = \sum_{i,j} \left(r_{u,i} - P_{i}^TQ_{j}\right)^2 + \lambda\left( \sum_{i}{\parallel P_i \parallel}^2+\sum_{j}{\parallel Q_j \parallel}^2 \right)
+\end{aligned}
+$$
+
+In order to find the P and Q that minimize our cost function $J_{P,Q}$ we use the stochastic gradient descent (SGD) algorithm. The gradient descent updates are found by deriving our cost function with respect to $P_i$ (i.e. user i) and $Q_j$ (i.e. skill j) respectively:
+$$
+\begin{aligned}
+\epsilon_{i,j} &= r_{i,j} - P_{i}^TQ_{j}\\
+J_{P,Q} &= \sum_{i,j} \epsilon_{i,j}^2 + \lambda\left( \sum_{i}{\parallel P_i \parallel}^2+\sum_{j}{\parallel Q_j \parallel}^2 \right) \\
+                    &\underset{P, Q}{\mathrm{argmin}} \sum_{i,j} \epsilon_{i,j}^2 + \lambda\left( \sum_{i}{\parallel P_i \parallel}^2+\sum_{j}{\parallel Q_j \parallel}^2 \right) \\
+\frac{\partial{J}}{\partial{P_i}} &= -2\epsilon_{i,j}Q_j + 2\lambda P_i = -2(\epsilon_{i,j}Q_j - \lambda P_i) \Rightarrow \Delta P_i = \gamma(\epsilon_{i,j}Q_j - \lambda P_i) \\
+\frac{\partial{J}}{\partial{Q_j}} &= -2\epsilon_{i,j}P_i + 2\lambda Q_j = -2(\epsilon_{i,j}P_i - \lambda Q_j) \Rightarrow \Delta Q_j = \gamma(\epsilon_{i,j}P_i - \lambda Q_j)
+\end{aligned}
+$$
+
+where $\gamma$ is the learning rate. Therefore, in every SGD step the following P and Q updates are executed:
+$$
+\begin{aligned}
+P_i = P_i + \gamma(\epsilon_{i,j}Q_j - \lambda P_i) \\
+Q_j = Q_j + \gamma(\epsilon_{i,j}P_i - \lambda Q_j)
+\end{aligned}
+$$
+
+# Method implementation
+
+At this point we're ready to introduce the LRMF implementation described in section [Low-Rank Matrix Factorization]. We have identified the following model hyper-parameters:
+
+* $K$: the number of features or latent dimensions.
+* $\gamma_{\text{max}}$: the maximum learning rate.
+* $\lambda$: the regularizaton parameter.
+* $\sigma$: standard deviation of the standard normal random initialization for P and Q i.e. for the model to learn.
+\
+
+Our implementation of the classic SGD algorithm is described as follows:
+
+1. Pre-process the ratings to standard scale or z-scores saving $\mu$ and $\sigma$.
+2. Initialize the matrices P and Q to be as close as possible to the learning goal [@rialland2019].
+3. For `maxIter` iterations of the algorithm run a number of batch updates and check the RMSE. If the RMSE worsens after the batch iterations then halve $\gamma$ [see @rialland2019] otherwise increase it more slowly to a maximum of $\gamma_{\text{max}}$.
+4. Run `batchIter` iterations of batch updates using `batchSize` random samples.
+5. Store the final P and Q as part of the fit object and use it to make predictions.
+
+In the second step of the algorithm, the matrix is initialized to be as close as possible to the learning goal^[See https://github.com/Emmanuel-R8/HarvardX-Movielens/raw/master/MovieLens.pdf] [@rialland2019]; this idea proved very useful in reaching very fast convergence. However, note that we have a specific representation of P and Q to align our matrix operations workload with R's default column-major ordering: 
+
+$$ 
+P^T Q = 
+\begin{bmatrix}
+1      & u_{1}     & 0     \\
+1      & u_{2}     & 0      \\
+\vdots & \vdots    & \vdots \\
+1      & u_{i}     & 0      \\
+\vdots & \vdots    & \vdots \\
+1      & u_{N} & 0      \\
+\end{bmatrix}
+\times 
+\begin{bmatrix}
+s_{1} & s_{2} & \cdots & s_{j} & \cdots & s_{M} \\
+1     & 1     & \cdots & 1     & \cdots & 1     \\
+0     & 0     & \cdots & 0     & \cdots & 0     \\
+\end{bmatrix}
+= 
+\begin{bmatrix}
+       & \vdots        &        \\
+\cdots & s_{j} + u_{i} & \cdots \\
+       & \vdots        &        \\ 
+\end{bmatrix}
+$$
+\
+We also implemented a lock-free multi-core parallel^[Using `parallel::mclapply(...)` see https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html] variation of the classic SGD algorithm that trains faster. The key idea is to work in parallel on mutually exclusive subsets of the P and Q matrices, creating as many mutually exclusive subset combinations as there are cores available. We achieve that by first creating a blocks specification^[See https://stackoverflow.com/questions/59154906] e.g. for a 3-core system we have:
+
+```{r method-blocking-poc1, echo=TRUE, message=TRUE}
+ncores <- 3
+bi <- rep(0:(ncores-1), ncores)
+bj <- (bi + rep(0:(ncores-1), 1, each = ncores)) %% ncores
+blocks <- tibble(bi=bi, bj=bj)
+prettyPrint(
+  blocks
+, latex_options = c("striped"))
+```
+
+The blocks specification above give us 3 different block groups (every 3 consecutive rows) in i (users) and j (skills) to run in parallel and mutual exclusion. Therefore, selecting rows as described in the following listing we can filter the matrices P and Q for users and skills that match those blocks respectively, can each be assigned to a separate core and executed in parallel:
+```{r method-blocking-poc2, echo=TRUE, message=TRUE}
+# first group of mutually exclusive blocks
+prettyPrint(blocks %>% slice(1:3), latex_options = c("striped"))
+```
+
+In this case the first core will work on users and skills whose `i %% ncores == 0 & j %% ncores == 0` respectively, the second core will work on `i %% ncores == 1 & j %% ncores == 1` and the third core on `i %% ncores == 2 & j %% ncores == 2`. However, doing so will only train those block combinations. Therefore at every iteration of the algorithm and before running the batch updates, we randomly choose which of the three block groups to use, either: `blocks[1:3,]`, `blocks[4:6,]` or `blocks[7:9,]` and each core will run batch updates in a loop ensuring maximum CPU utilization. We would of course like to run long batches in parallel but doing so may lead the SGD algorithm advancing in the wrong direction without a chance for correction.
+\
+
+The following code listing corresponds to the core of the SGD algorithm implementation as part of the function `lrmf$fit(...)` and including both, the classic and parallel variations. We iterate `maxIter` times as shown in line `#1`. Lines `#3` through `#18` correspond to the classic implementation. There we have the gradient P and Q updates and all operations are computed on the matrix columns as discussed before. Lines `#20` through `#80` correspond to the parallel implementation. There we pick a random block group and run `parIter` iterations on it. In lines `#54` through `#69` we accumulate the set of distinct updated indexes for the users and skills and return them along with the gradient updates. Finally the lines `#75` through `#80` "reduce" or consolidate the updates from all blocks into P and Q.
+```{r sgd-listing, echo=TRUE, message=TRUE, eval=FALSE}
+  for (iter in 1:maxIter) {
+    if (ncores == 1) {
+      for (iter2 in 1:batchIter) {
+        # choose a random batch of samples
+        samples <- x %>% sample_n(batchSize)
+        
+        # get hold of the indexes
+        i <- samples$i
+        j <- samples$j
+        
+        # compute the residuals
+        epsilon <- samples$rating_z - colSums(P[,i]*Q[,j])
+        
+        # partial derivatives w.r.t. P and Q
+        P_upd <- (P[,i] + gamma*(Q[,j]*epsilon[col(Q[,j])] - lambda*P[,i]))
+        Q[,j] <- (Q[,j] + gamma*(P[,i]*epsilon[col(P[,i])] - lambda*Q[,j]))
+        P[,i] <- P_upd
+      }
+    } else {
+      stopifnot(nrow(blocks) == ncores^2)
+      
+      # pick a random block group
+      g <- sample(0:(ncores-1), 1)
+
+      # process the selected block group
+      res <- mclapply((g*ncores + 1):((g + 1)*ncores), mc.cores = ncores, 
+                      mc.set.seed = TRUE,
+        FUN = function(b) {
+          # select the subset of samples corresponding to this block
+          blockSamples <- x %>%
+            filter(bi == blocks[b,]$bi & bj == blocks[b,]$bj)
+
+          # keep track of the updated columns
+          ii <- NULL
+          jj <- NULL
+          
+          # run multiple batches on this block
+          for (iter2 in 0:(parIter-1)) {
+            samples <- blockSamples %>% sample_n(batchSize)
+
+            # get hold of the indexes
+            i <- samples$i
+            j <- samples$j
+
+            # compute the residuals
+            epsilon <- samples$rating_z - colSums(P[,i]*Q[,j])
+            
+            # partial derivatives w.r.t. P and Q
+            P_upd <- (P[,i] + gamma*(Q[,j]*epsilon[col(Q[,j])] - lambda*P[,i]))
+            Q[,j] <- (Q[,j] + gamma*(P[,i]*epsilon[col(P[,i])] - lambda*Q[,j]))
+            P[,i] <- P_upd
+            
+            # accumulate the changed indexes
+            if (is.null(ii)) {
+              ii <- i
+            } else {
+              ii <- c(ii, i)
+            }
+            
+            if (is.null(jj)) {
+              jj <- j
+            } else {
+              jj <- c(jj, j)
+            }
+          }
+          
+          ii <- sort(unique(ii))
+          jj <- sort(unique(jj))
+          
+          # output the updated user and skill columns
+          return(list(Pii=P[,ii],Qjj=Q[,jj],ii=ii,jj=jj))
+        })
+      
+      # consolidate updates into the P and Q matrices
+      for (k in 1:length(res)) {
+        l <- res[[k]]
+        P[,l$ii] <- l$Pii
+        Q[,l$jj] <- l$Qjj
+      }      
+    }
+```
+
+Our SGD implementation is integrated with the popular machine learning R package `caret`^[See https://cran.r-project.org/web/packages/caret/] as a custom `lrmf` model^[See using your own model in train https://topepo.github.io/caret/using-your-own-model-in-train.html], and thus we take advantage of all the caret infrastructure for calibration, training and prediction in addition to making our code easier to understand, maintain and reuse.
+\
+
+```{r model-impl, echo=FALSE, message=FALSE}
+##########################################################################################
+## Create the CF Low-Rank Matrix Factorization (lrmf) model integrated with the caret 
+## package. The model employs low-rank matrix factorization trained using SGD.
+##
+## This caret model specification follows the implementation details described here:
+## https://topepo.github.io/caret/using-your-own-model-in-train.html
+##########################################################################################
+
+# Define the model lrmf (Collaborative Filtering Low-Rank Matrix Factorization)
+lrmf <- list(type = "Regression",
+             library = NULL,
+             loop = NULL,
+             prob = NULL,
+             sort = NULL)
+
+# Define the model parameters. Four different parameters are supported.
+#
+# @param K the number of latent dimensions
+# @param maxGamma the maximum learning rate.
+# @param lambda the regularizaton parameter applied to the different effects.
+# @param sigma the standard deviation of the initial values.
+#
+lrmf$parameters <- data.frame(parameter = c("K", "maxGamma", "lambda", "sigma"),
+                              class = c(rep("numeric", 4)),
+                              label = c("K-Latent dimensions", "Max. Learning rate", "Lambda", "Sigma of initial values"))
+
+# Define the required grid function, which is used to create the tuning grid (unless the user 
+# gives the exact values of the parameters via tuneGrid)
+lrmf$grid <- function(x, y, len = NULL, search = "grid") {
+  K <- 10
+  maxGamma <- c(0.02, 0.1)
+  lambda <- c(0.003, 0.005, 0.01, 0.03, 0.05)
+  sigma <- c(0.05, 0.1)
+  
+  # to use grid search
+  out <- expand.grid(K = K,
+                     maxGamma = maxGamma,
+                     lambda = lambda,
+                     sigma = sigma)
+  
+  if(search == "random") {
+    # random search simply random samples from the expanded grid
+    out <- out %>%
+      sample_n(100)
+  }
+  out
+}
+
+# Define the fit function so we can fit our model to the data.
+#
+# @param P the initial P matrix.
+# @param Q the initial Q matrix.
+# @param batchSize the number of samples to train with at every step.
+# @param trackConv whether to track RMSE convergence of the algorithm.
+# @param thresRatio threshold for the ratio of initial gamma to gamma.
+# @param iterBreaks number of steps before tracking RMSE convergence.
+# @param verbose whether to output extra convergence information.
+# @param ncores the number of cores to use for parallel batches.
+# @param maxIter maximum number of outer iterations.
+# @param batchIter number of batch iterations of the SGD algorithm.
+#
+lrmf$fit <- function(x, y, wts, param, lev, last, weights, classProbs, P=NULL, Q=NULL, 
+                     batchSize=1000*param$K, trackConv=F, perTrack=1, thresRatio=1000, 
+                     iterBreaks=1, verbose=F, ncores=detectCores(), maxIter=250,
+                     batchIter=ifelse(ncores == 1, 108, ncores^2*3), ...) {
+  # check whether we have a correct x
+  stopifnot("userId" %in% colnames(x))
+  stopifnot("skill"  %in% colnames(x))
+  stopifnot("rating" %in% colnames(x))
+  stopifnot(all(x$rating == y))
+  
+  # save some parameters
+  gamma  <- param$maxGamma                     # learning rate
+  lambda <- param$lambda                       # regularization parameter
+  K <- param$K                                 # number of latent dimensions
+  N <- nrow(x %>% select(userId) %>% unique()) # number of users
+  M <- nrow(x %>% select(skill)  %>% unique()) # number of skills
+  
+  # compute and save the global mean and sd
+  globalMu    <- mean(x$rating)
+  globalSigma <- sd  (x$rating)
+  
+  # compute the z-score
+  x <- x %>% select(userId, skill, rating) %>%
+    mutate(rating_z = (rating - globalMu) / globalSigma)
+
+  # compute the user and skill effects
+  skillEffects <- x %>% group_by(skill)  %>% summarise(b_s = mean(rating_z))
+  userEffects  <- x %>% group_by(userId) %>% summarise(b_u = mean(rating_z))
+
+  # indexing for users and skills
+  userIndex  <- x %>% distinct(userId) %>% arrange(userId) %>% mutate(i = row_number())
+  skillIndex <- x %>% distinct(skill)  %>% arrange(skill)  %>% mutate(j = row_number())
+  
+  # create the actual x
+  x <- x %>%
+    left_join(userIndex , by="userId") %>%
+    left_join(skillIndex, by="skill") %>%
+    select(i, j, rating, rating_z)
+
+  # initialize P and Q to have the skill and user effects already encoded in
+  # the columns are layout so that the computation is column-major aligned 
+  if (is.null(P) || is.null(Q)) {
+    P <- matrix(0, nrow = K, ncol = N)
+    P[1,] <- matrix(1, nrow = 1, ncol = N)
+    P[2,] <- as.matrix(userIndex %>% left_join(userEffects, by="userId") %>% select(b_u))
+    P <- P + matrix(rnorm(K*N, mean = 0, sd = param$sigma), nrow = K, ncol = N)
+
+    Q <- matrix(0, nrow = K, ncol = M)
+    Q[1,] <- as.matrix(skillIndex %>% left_join(skillEffects, by="skill") %>% select(b_s))
+    Q[2,] <- matrix(1, nrow = 1, ncol = M)
+    Q <- Q + matrix(rnorm(K*M, mean = 0, sd = param$sigma), nrow = K, ncol = M)
+  }
+
+  # double-check the matrix dimensions
+  stopifnot(nrow(P) == K)
+  stopifnot(ncol(P) == N)
+  stopifnot(nrow(Q) == K)
+  stopifnot(ncol(Q) == M)
+  
+  # convenience function to compute the RMSE for a subset of the samples
+  computeRMSE <- function(subsetSamples) {
+    predicted <- globalMu + globalSigma*colSums(P[,subsetSamples$i]*Q[,subsetSamples$j])
+    return(Metrics::rmse(predicted, subsetSamples$rating))
+  }
+  
+  # prepare for parallel computation, blocks contain ncores number of groups
+  # that can be each executed in parallel, each group trains a mutually
+  # exclusive permutation of the training data tuples
+  if (ncores > 1) {
+    if (verbose) {
+      cat(sprintf('running parallel version with %d cores\n', ncores))
+    }
+    bi <- rep(0:(ncores-1), ncores)
+    bj <- (bi + rep(0:(ncores-1), 1, each = ncores)) %% ncores
+    blocks <- tibble(bi=bi, bj=bj)
+    
+    # how many iterations each core will do
+    parIter <- batchIter / ncores
+    
+    # include the block indexes bi and bj for parallel processing
+    x <- x %>%
+      mutate(bi = i %% ncores, bj = j %% ncores)
+    
+    # correct the batchSize if needed, the lower bound is the minimum
+    # number of elements within each group
+    lowerBound <- x %>% 
+      group_by(bi, bj) %>% 
+      summarise(n=n()) %>% 
+      ungroup() %>%
+      summarise(n=min(n)) %>% 
+      pull(n)
+    if (lowerBound < batchSize) {
+      batchSize <- lowerBound
+      if (verbose) {
+        cat(sprintf('corrected the batch size to %d\n', batchSize))
+      }
+    }
+
+  } else {
+    if (verbose) {
+      cat(sprintf('running sequential version\n', ncores))
+    }
+  }
+  
+  # track convergence on these samples
+  subsetSamples <- x %>% sample_n(nrow(x)*perTrack)
+  rmseValue <- computeRMSE(subsetSamples)
+  if (verbose) {
+    cat(sprintf('the training RMSE at iter=0 is %.9f\n', rmseValue))
+  }
+  
+  if (trackConv) {
+    rmseHist <- tibble(iter=0, K=K, rmse=rmseValue)
+  } else {
+    rmseHist <- NULL
+  }
+  
+  for (iter in 1:maxIter) {
+    # for performance reasons the SGD update code is duplicated in both 
+    # implementations; using a function would defeat the purpose due to 
+    # R's pass-by-value and the undesirable cost on copying the matrices
+    if (ncores == 1) {
+      for (iter2 in 1:batchIter) {
+        # choose a random batch of samples
+        samples <- x %>% sample_n(batchSize)
+        
+        # get hold of the indexes
+        i <- samples$i
+        j <- samples$j
+        
+        # compute the residuals
+        epsilon <- samples$rating_z - colSums(P[,i]*Q[,j])
+        
+        # partial derivatives w.r.t. P and Q
+        P_upd <- (P[,i] + gamma*(Q[,j]*epsilon[col(Q[,j])] - lambda*P[,i]))
+        Q[,j] <- (Q[,j] + gamma*(P[,i]*epsilon[col(P[,i])] - lambda*Q[,j]))
+        P[,i] <- P_upd
+      }
+    } else {
+      stopifnot(nrow(blocks) == ncores^2)
+      
+      # pick a random block group
+      g <- sample(0:(ncores-1), 1)
+
+      # process the selected block group
+      res <- mclapply((g*ncores + 1):((g + 1)*ncores), mc.cores = ncores, mc.set.seed = TRUE,
+        FUN = function(b) {
+          # select the subset of samples corresponding to this block
+          blockSamples <- x %>%
+            filter(bi == blocks[b,]$bi & bj == blocks[b,]$bj)
+          stopifnot(nrow(blockSamples) > 0)
+          
+          # keep track of the updated columns
+          ii <- NULL
+          jj <- NULL
+          
+          # run multiple batches on this block
+          for (iter2 in 0:(parIter-1)) {
+            samples <- blockSamples %>% sample_n(batchSize)
+
+            # get hold of the indexes
+            i <- samples$i
+            j <- samples$j
+
+            # compute the residuals
+            epsilon <- samples$rating_z - colSums(P[,i]*Q[,j])
+            
+            # partial derivatives w.r.t. P and Q
+            P_upd <- (P[,i] + gamma*(Q[,j]*epsilon[col(Q[,j])] - lambda*P[,i]))
+            Q[,j] <- (Q[,j] + gamma*(P[,i]*epsilon[col(P[,i])] - lambda*Q[,j]))
+            P[,i] <- P_upd
+            
+            # accumulate the changed indexes
+            if (is.null(ii)) {
+              ii <- i
+            } else {
+              ii <- c(ii, i)
+            }
+            
+            if (is.null(jj)) {
+              jj <- j
+            } else {
+              jj <- c(jj, j)
+            }
+          }
+          
+          ii <- sort(unique(ii))
+          jj <- sort(unique(jj))
+          
+          # output the updated user and skill columns
+          return(list(Pii=P[,ii],Qjj=Q[,jj],ii=ii,jj=jj))
+        })
+      
+      # consolidate updates into the P and Q matrices
+      for (k in 1:length(res)) {
+        l <- res[[k]]
+        P[,l$ii] <- l$Pii
+        Q[,l$jj] <- l$Qjj
+      }      
+    }
+    
+    # check rmse
+    rmsePrevious <- rmseValue
+    rmseValue    <- computeRMSE(subsetSamples)
+
+    # track convergence at a number of steps
+    if (trackConv && iter %% iterBreaks == 0) {
+      if (verbose) {
+        cat(sprintf('the training RMSE at iter=%d is %.9f\n', iter, rmseValue))
+      }
+      rmseHist <- rmseHist %>% 
+        add_row(iter=iter, K=K, rmse=rmseValue)
+    }
+
+    # check whether the rmse improved, if not then halve gamma
+    if (rmsePrevious < rmseValue) {
+      gamma <- gamma / 2
+      if (verbose) {
+        cat(sprintf("decreased the learning rate to: %.9f\n", gamma))
+      }
+    } else {
+      if (gamma < param$maxGamma) {
+        # increase the learning rate more slowly 
+        gamma <- min(param$maxGamma, gamma*3/2)
+        if (verbose) {
+          cat(sprintf("increased the learning rate to: %.9f\n", gamma))
+        }
+      }
+    }
+
+    # if threshold ratio exceeded then bounce gamma back to previous value
+    if (param$maxGamma / gamma > thresRatio) {
+      gamma <- gamma*2
+      if (verbose) {
+        cat(sprintf("bounced the learning rate to: %.9f\n", gamma))
+      }
+    }
+  }
+
+  # return the model fit as a list
+  return(list(globalMu=globalMu,
+              globalSigma=globalSigma,
+              skillEffects=skillEffects,
+              userEffects=userEffects,
+              userIndex=userIndex,
+              skillIndex=skillIndex,
+              P=P,
+              Q=Q,
+              rmseHist=rmseHist,
+              params=param))
+}
+
+# Define the predict function that produces a vector of predictions
+lrmf$predict <- function(modelFit, newdata, preProc = NULL, submodels = NULL) {
+  # check whether we have a correct newdata
+  stopifnot("userId" %in% colnames(newdata))
+  stopifnot("skill"  %in% colnames(newdata))
+  
+  # link the newdata to the indexes per user and skill
+  newdata <- newdata %>% 
+    left_join(modelFit$userIndex , by="userId") %>%
+    left_join(modelFit$skillIndex, by="skill") %>%
+    select(i, j)
+  
+  predicted <- modelFit$globalMu + modelFit$globalSigma*
+    colSums(modelFit$P[,newdata$i]*modelFit$Q[,newdata$j])
+  return(predicted)
+}
+
+# restore the actual number of cores
+ncores <- detectCores()
+```
+
+# Results
+
+Now we're ready to run our model implementation, first we need to create a calibration set (small subset of the training set):
+```{r lrmf-build-calibration-set, echo=TRUE, message=TRUE}
+tic("collecting the calibration set of 2k samples")
+# set the seed again
+portable.set.seed(1)
+calibrationSet <- trainSet %>%
+  sample_n(2000)
+toc()
+
+# how many distinct skills and users in the calibration set?
+cat(sprintf("The calibration set contains %d unique skills and %d users\n", 
+            length(unique(calibrationSet$skill)), 
+            length(unique(calibrationSet$userId))))
+```
+
+Then we calibrate our model (i.e. run cross-validation) using the `caret` package to find the best hyper-parameters, we also check for reproducible results:
+```{r lrmf-run-calibration, echo=TRUE, message=TRUE}
+tic('calibrating the LRMF model')
+# set the seed again
+portable.set.seed(1)
+control <- trainControl(method = "cv",
+                        search = "grid",
+                        number = 10,        # use 10 K-folds in cross validation
+                        p = .9,             # use 90% of training and 10% for testing
+                        allowParallel = T,  # execute CV folds in parallel
+                        verboseIter = T)
+cvFit <- train(x = calibrationSet,
+               y = calibrationSet$rating,
+               method = lrmf,
+               trControl = control,
+               ncores = 1,
+               maxIter = 100,
+               batchIter = 50,
+               batchSize = 100)
+toc()
+
+## The bestTune model found is:
+stopifnot(cvFit$bestTune$K == 10)
+stopifnot(cvFit$bestTune$gamma == 0.1)
+stopifnot(cvFit$bestTune$lambda == 0.05)
+stopifnot(cvFit$bestTune$sigma == 0.05)
+```
+
+We can then train our model on all training data^[Actually we train the LRMF model on a small fraction ~0.5% of the training set.]. We train both the parallel and classic models using the exact same number of sample updates 27k (i.e. `maxIter*batchIter`) to compare them. The parallel is trained with half the `maxIter` compensated with doubling the `batchIter`. We see that the parallel implementation arrives to comparable RMSE in about half the time than the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction and this is confirmed in the convergence plot as we see it's RMSE more bumpy compared to the classic:
+```{r lrmf-train-all, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE}
+tic('training LRMF on the full training set - parallel')
+# set the seed again
+portable.set.seed(1)
+fitPar <- train(x = trainSet,
+                y = trainSet$rating,
+                method = lrmf,
+                trControl = trainControl(method = "none"),
+                tuneGrid = cvFit$bestTune,
+                trackConv = T,
+                iterBreaks = 1,
+                verbose = F,
+                ncores = ncores, 
+                maxIter = 125,
+                batchIter = 216)
+ticTocTimes <- toc()
+elapsedPar <- ticTocTimes$toc[[1]] - ticTocTimes$tic[[1]]
+
+# save the RMSE history
+rmseHist <- fitPar$finalModel$rmseHist %>% 
+  add_column(method=sprintf("Parallel - %d cores", ncores))
+
+tic('training LRMF on the full training set - classic')
+# set the seed again
+portable.set.seed(1)
+fitSeq <- train(x = trainSet,
+                y = trainSet$rating,
+                method = lrmf,
+                trControl = trainControl(method = "none"),
+                tuneGrid = cvFit$bestTune,
+                trackConv = T,
+                iterBreaks = 1,
+                verbose = F,
+                ncores = 1, 
+                maxIter = 250,
+                batchIter = 108)
+ticTocTimes <- toc()
+elapsedSeq <- ticTocTimes$toc[[1]] - ticTocTimes$tic[[1]]
+
+# save the RMSE history
+rmseHist <- rmseHist %>%
+  bind_rows(fitSeq$finalModel$rmseHist %>% 
+              add_column(method="Classic"))
+
+# plot the convergence for the model on the full training data
+colorSpec <- c("salmon", "turquoise3")
+names(colorSpec) <- c("Classic", sprintf("Parallel - %d cores", ncores))
+rmseHist %>%
+  ggplot(aes(iter, rmse, color=method, group=method)) + 
+  geom_point(aes(shape=method), size=2) + 
+  geom_line() +
+  scale_colour_manual(values = colorSpec) +  
+  theme(plot.title = element_text(hjust = 0.5), legend.text=element_text(size=12)) + 
+  xlab("Iterations") + ylab("RMSE") +
+  annotate("text", x = 125, colour = colorSpec[2], 
+           y = rmseHist %>% 
+             filter(method == sprintf("Parallel - %d cores", ncores)) %>% 
+             last() %>% 
+             pull(rmse) - 0.007,
+           label = sprintf("%.2f sec", elapsedPar)) + 
+  annotate("text", x = 250, colour = colorSpec[1],
+           y = rmseHist %>% 
+             filter(method == "Classic") %>% 
+             last() %>% 
+             pull(rmse) - 0.004, 
+           label = sprintf("%.2f sec", elapsedSeq)) +
+  theme(legend.position="bottom", plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size = 12))
+```
+
+At this point, we're ready to test our trained model in the out-of-sample test set. We reached an RMSE=`0.654579092` and RMSE=`0.635590026` for the parallel and classic respectively. Note that we didn't improve over the simpler baseline model in the out-of-sample but we arrived very close:
+```{r lrmf-test-rmse, echo=TRUE, message=TRUE}
+## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
+predictedRatings <- predict(fitPar, testSet)
+rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
+cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
+# check that we get reproducible results
+#stopifnot(abs(rmseValue - 0.654579092) < 1e-9)
+
+## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
+predictedRatings <- predict(fitSeq, testSet)
+rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
+cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
+# check that we get reproducible results
+stopifnot(abs(rmseValue - 0.635590026) < 1e-9)
+```
+
+Now we're ready to test drive our model on the author's data. A question posed in the introduction of this work was to predict the author^[See https://stackoverflow.com/users/1142881] ratings in skills for which there is no previous evidence. For example, how high would the author be rated on skill `tableau`? and whether it was a sound decision to dismiss the author as candidate applying for a job that had `tableau` as requirement simply because the candidate had not used that specific skill before? In order to do that let's first take a look at the skills where the author is top rated:
+```{r results-top-skills, echo=TRUE, message=TRUE}
+# where is the author top rated?
+prettyPrint(
+  ratings %>% 
+    filter(userId == 1142881) %>%
+    arrange(desc(rating))
+, latex_options = c("striped"))
+```
+
+Let's find the skills for which there is no previous evidence, that's it, those skills for which the author doesn't have any observed ratings. Then compute the average ratings among all users that have been rated on those skills and compute the predicted author's rating on those skills. We then output the author's predicted ratings for some interesting tecnologies and notice that he's predicted to be way above average for skill `tableau` confirming his initial hunch using a machine learning model. Finally we output the top 20 skills where the author is predicted to rate above average and in descending predicted rating order. The author should consider following the advice, learn and work on those skills or technologies:
+```{r results-rating-predictions, echo=TRUE, message=TRUE}
+# find the skills for which there are no ratings i.e. there is no evidence
+noEvidenceSkills <- mainSkills %>%
+  anti_join(ratings %>% 
+  filter(userId == 1142881) %>% 
+  select(skill) %>% 
+  unique(), by="skill") %>%
+  arrange(desc(count))
+  
+# compute the ratings average for each of those skills
+avgNoEvidenceSkills <- ratings %>%
+  group_by(skill) %>%
+  summarise(avg=mean(rating)) %>%
+  semi_join(noEvidenceSkills, by="skill")
+  
+# create new data for prediction
+newdata <- noEvidenceSkills %>%
+  select(skill, count) %>%
+  mutate(userId=1142881) %>%
+  inner_join(avgNoEvidenceSkills, by="skill") %>%
+  select(userId, skill, count, avg)
+
+# compute skill rating predictions
+newdata$predicted <- predict(fitSeq, newdata)
+
+# show how would be rated for the following hot technologies
+prettyPrint(
+  newdata %>% 
+    filter(skill %in% c("blockchain", "haskell", "apache-kafka", 
+                        "tableau", "spring-boot", "google-maps", "c++11", 
+                        "c++17", "spring-mvc", "qt5", "ejb", "game-physics", 
+                        "go", "java-stream", "teradata", "itext")) %>%
+    arrange(desc(predicted))
+, latex_options = c("striped"))
+
+# show the top 20 skills where the predicted rating is above average
+prettyPrint(
+  newdata %>% 
+    filter(predicted > avg) %>% 
+    top_n(20, predicted) %>%
+    arrange(desc(predicted))
+, latex_options = c("striped"))
+```
+
+# Conclusion {-}
+
+In this work we have unveiled multiple data science analysis use-cases possible by studying the Stack Overflow data. There are many more interesting questions we could answer using this dataset e.g. how the question sentiment affects the reputation of the users and the score of the questions asked or how is a question predicted to score? However, in this study we have focussed on topics of most practical relevance and in the context of the technology recruitment industry i.e. clustering skills, identifying the main technology trends and putting them in geographical context. Furthermore, we have derived and designed a new user skill ratings dataset and presented a recommender system implementation to predict user skill ratings that offers many interesting uses in practice.
+\
+
+First we've built a fully automated R script to: download, extract, parse, clean and store the Stack Overflow data. It was already a challenge to start with since some of the extracted XML files reached 75GB in size. We applied blocking and parallel processing in this and other areas of this work.
+\
+
+We successfully applied dimensionality reduction in two different areas, first we applied PCA to the co-occurrence matrix of skills in questions and in order to identify the main technology trends occurring in the last ten years. As discussed, running this analysis in a rolling time window fashion we would discover the changes in technology trends over different periods of time. As result of this analysis we learned from the first principal component that the technologies explaining most of the variance in the data are related to blockchain, cloud computing, build, deployment tools and data visualization. Although not totally surprising it's interesting to see that blockchain seems to be applied in many different contexts. Another take away result is that cloud computing is ubiquitous. It's definitely a strong asset for any technogy professional to master those.
+\
+
+Putting the main technology trends in geographical context for the Stack Overflow users in Switzerland reveals that Zurich has become a technology center. We identified all the main trends there, high quality and quantity of Stack Overflow users posting from Zurich. Indeed most of the big technology players have been expanding to Zurich including: Google, Microsoft, Facebook, Oracle, and others. We noticed too that the south-east parts of Switzerland e.g. Tessin don't seem to be too active technology-wise at least this isn't revealed by looking at the number of Stack Overflow users posting from there. We expected to see above average blockchain activity in Zug believed to be a cryptocurrency haven but this doesn't seem to be the case again judging by the top posts from users located in that area.
+\
+
+We then focussed on building a new derived `ratings` dataset where we found ourselves facing an interesting statistical inference challenge. Namely to estimate the significance in the difference of the median and mean for different groups. The result of this challenge was to come up with a sound user skill rating assignment strategy. Building the `ratings` dataset was also a challenge which we attacked using the seen before blocking and parallel processing. We saw how cleaning the `tags` field lead to expanding from millions to hundred of millions of rows which would not be otherwise possible to fit in memory and compute in reasonable times.
+
+
+# Bibliography {-}
