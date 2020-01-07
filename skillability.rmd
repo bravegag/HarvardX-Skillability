@@ -206,8 +206,8 @@ saveObjectByName <- function(object, objectName, prefixDir="data",
 
 # Pretty prints the given tibble using kable
 # @param t the tibble to print
-prettyPrint <- function(t, latex_options = c("striped", "scale_down")) {
-  return(kable(t, "latex", booktabs = T) %>% 
+prettyPrint <- function(t, latex_options = c("striped", "scale_down"), caption = NULL) {
+  return(kable(t, "latex", caption = caption, booktabs = T) %>% 
            kable_styling(position = "center", latex_options = latex_options) %>%
            row_spec(0, bold = T))
 }
@@ -306,10 +306,10 @@ This last analysis enables us to answer many practical questions too, for exampl
 
 ## Data import
 
-The script `create_dataset.r` contains all the code to automatically download, extract, parse, clean and construct all the complete dataset required for analysis e.g. the `ratings`. The script is large and only the most important points will be covered; however, the script is very well structured and commented. Running `create_dataset.r` the first time may take several hours and require large amounts of free disk disk space. Furthermore the script requires running in an Unix-like environment^[It was tested in Ubuntu 18.04 with 32GB RAM, a 6-core Intel i7-4960X and a SSD drive.] that has the following tools available: `wc`, `split`, `awk`, `7z`, `rename`, `mv`, `grep` and `time`. The script will automatically create and populate the relative folders `data/7z/*` containing the downloaded files; the folder `data/xml/*` containing the extracted XML files and finally the folder `data/rds/*` containing the generated dataset files^[Available in the project's GitHub page: https://github.com/bravegag/HarvardX-Skillability]. Note that running `create_dataset.r` **is optional** as the final `rds` files are readily available under the relative folder `data/rds/*` in the project's GitHub repository https://github.com/bravegag/HarvardX-Skillability.
+The script `create_dataset.r` contains all the code to automatically download, extract, parse, clean and construct all the complete dataset required for analysis e.g. the `ratings` dataset. The script is large and only the most important points will be covered; however, the script is well structured and commented. Running `create_dataset.r` the first time may take several hours and require large amounts of free disk disk space. Furthermore the script requires running in an Unix-like environment^[It was tested in Ubuntu 18.04 with 32GB RAM, a 6-core Intel i7-4960X and a SSD drive.] that has the following tools available: `wc`, `split`, `awk`, `7z`, `rename`, `mv`, `grep` and `time`. The script will automatically create and populate the relative folders `data/7z/*` containing the downloaded files shown in Table \@ref(tab:7z-files-summary); the folder `data/xml/*` will contain the extracted XML files and finally the folder `data/rds/*` will contain the final `rds` dataset files^[Available in the project's GitHub page: https://github.com/bravegag/HarvardX-Skillability]. Note that running `create_dataset.r` **is optional** as the final `rds` files are readily available under the relative folder `data/rds/*` in the project's GitHub repository https://github.com/bravegag/HarvardX-Skillability.
 \
 
-```{r data_files_table,message=TRUE}
+```{r 7z-files-summary, fig.pos="H"}
 local({
   tbl <- data.frame(
     Name =        c("`stackoverflow.com-Badges.7z`", 
@@ -333,7 +333,7 @@ local({
                     "All the users.")
   )
 
-  kable(tbl, "latex", booktabs = T) %>% 
+  kable(tbl, "latex", caption = "Summary of Stack Overflow 7z dataset files", booktabs = T) %>% 
     kable_styling(full_width = F) %>% 
     column_spec(4, width = "6cm") %>% 
     row_spec(0, bold = T)
@@ -354,9 +354,9 @@ Note that the huge Posts XML file contains both questions and answers and they'r
 
 ## Data cleaning
 
-The data cleaning steps were also covered as part of the `create_dataset.r` implementation. The cleaning process removes rows with missing important XML attributes e.g. answer posts with missing "foreign key" `questionId`. Several data transformations are applied too e.g. the questions attribute `tags` has HTML entity separators which are transformed into pipe separated^[See `create_dataset.r` lines #548 and #549.]. The cleaning outcome is briefly summarized in the following table:
+The data cleaning steps were also covered as part of the `create_dataset.r` implementation. The cleaning process removes rows with missing important XML attributes e.g. answer posts with missing "foreign key" `questionId`. Several data transformations are applied too e.g. the questions attribute `tags` has HTML entity separators which are transformed into pipe separated^[See `create_dataset.r` lines #548 and #549.]. The cleaning outcome is briefly summarized in Table \@ref(tab:data-cleaning-summary).
 
-```{r data_cleaning,message=TRUE}
+```{r data-cleaning-summary, fig.pos="H"}
 local({
   tbl <- data.frame(
     Dataset = c("tags", 
@@ -384,7 +384,7 @@ local({
                     "Keep only answers created from the users selection, with score greater than 2 and having a valid answerId.")
   )
 
-  kable(tbl, "latex", booktabs = T) %>% 
+  kable(tbl, "latex", caption = "Summary of the data cleaning process", booktabs = T) %>% 
     kable_styling(full_width = F) %>% 
     column_spec(4, width = "7cm") %>% 
     row_spec(0, bold = T)
@@ -407,34 +407,43 @@ badges <- readObjectByName("Badges")
 tags <- readObjectByName("Tags")
 ```
 
-The `users` frame includes all the users we have selected for analysis, each row is uniquely identified by the key `userId` which is used to link with other tables. The column `creationDate` timestamp represents the time when the user account was first created. Note that `location` is free text which we use later as input to the Google Geocoding API for generating geographic coordinates:
-```{r structure-users,echo=TRUE,message=TRUE}
-prettyPrint(head(glimpse(users)))
+The `users` dataset depicted in Table \@ref(tab:structure-users) includes all the users we have selected for analysis, each row is uniquely identified by the key `userId` which is used to link with other tables. The column `creationDate` timestamp represents the time when the user account was first created. Note that `location` is free text which we use later as input to the Google Geocoding API for generating geographic coordinates:
+```{r structure-users, echo = TRUE, message = TRUE, fig.pos="H"}
+prettyPrint(head(glimpse(users)), 
+            caption = "Users dataset structure")
 ```
 
-The `questions` frame contains all the questions we have selected and each row is uniquely identified by the key `questionId` which is used to link with other tables. Note the `tags` column will be used extensively in this work; it has during the data cleaning phase already been preprocessed to pipe separated from HTML encoded entities. The column `acceptedAnswerId` identifies the accepted answer among all that corresponds to answers' `answerId`:
-```{r structure-questions,echo=TRUE,message=TRUE}
-prettyPrint(head(glimpse(questions)), latex_options = c("striped", "scale_down"))
+The `questions` dataset depicted in Table \@ref(tab:structure-questions) contains all the questions we have selected and each row is uniquely identified by the key `questionId` which is used to link with other tables. Note the `tags` column will be used extensively in this work; it has during the data cleaning phase already been preprocessed to pipe separated from HTML encoded entities. The column `acceptedAnswerId` identifies the accepted answer among all that corresponds to answers' `answerId`:
+```{r structure-questions, echo = TRUE, message = TRUE, fig.pos="H"}
+prettyPrint(head(glimpse(questions)), 
+            latex_options = c("striped", "scale_down"), 
+            caption = "Questions dataset structure")
 ```
 
-The `answers` frame contains all the answers also uniquely identified by the key `answerId`. Note that we can find the tags or skills linked to an answer by joining with the `questions` frame via the "parent" `questionId` and reading the `tags` column:
-```{r structure-answers,echo=TRUE,message=TRUE}
-prettyPrint(head(glimpse(answers)), latex_options = c("striped", "scale_down"))
+The `answers` dataset depicted in Table \@ref(tab:structure-answers) contains all the answers also uniquely identified by the key `answerId`. Note that we can find the tags or skills linked to an answer by joining with the `questions` frame via the "parent" `questionId` and reading the `tags` column:
+```{r structure-answers, echo = TRUE, message = TRUE, fig.pos="H"}
+prettyPrint(head(glimpse(answers)),
+            latex_options = c("striped", "scale_down"), 
+            caption = "Answers dataset structure")
 ```
 
-The `badges` frame contains the user badge assignments (linked via the foreign key `userId`), for example, the `gold` badge "Populist" is one of the hardest for an user to get and requires outscoring an already accepted answer with score of more than 10 by more than 2x of the accepted answer^[See https://stackoverflow.com/help/badges/62/populist]:
-```{r structure-badges,echo=TRUE,message=TRUE}
-prettyPrint(head(glimpse(badges)), latex_options = c("striped"))
+The `badges` dataset depicted in Table \@ref(tab:structure-badges) contains the user badge assignments (linked via the foreign key `userId`), for example, the `gold` badge "Populist" is one of the hardest for an user to get and requires outscoring an already accepted answer with score of more than 10 by more than 2x of the accepted answer^[See https://stackoverflow.com/help/badges/62/populist]:
+```{r structure-badges, echo = TRUE, message = TRUE, fig.pos="H"}
+prettyPrint(head(glimpse(badges)), 
+            latex_options = c("striped"), 
+            caption = "Badges dataset structure")
 ```
 
-Finally the tags data frame contains the all the unique tags along with their use counts:
-```{r structure-tags,echo=TRUE,message=TRUE}
-prettyPrint(head(glimpse(tags)), latex_options = c("striped"))
+Finally the tags dataset depicted in Table \@ref(tab:structure-tags) contains the all the unique tags along with their use counts:
+```{r structure-tags, echo = TRUE, message = TRUE, fig.pos="H"}
+prettyPrint(head(glimpse(tags)), 
+            latex_options = c("striped"), 
+            caption = "Tags dataset structure")
 ```
 
 ### Quick exploration
 
-Let's explore some interesting facts from the data we have, that's the top ranking question, answer, user, tags (i.e. skills) and the top ten gold badges. The top ranking answer applies to the top ranking question and they relate to `c++`, `performance` and code `optimization`. By looking at the top ten gold badges it shows that being awarded with a "Great Question"^[See https://stackoverflow.com/help/badges/22/great-question] is harder than for a "Great Answer"^[See https://stackoverflow.com/help/badges/25/great-answer], it would seem from this result that users tend to up vote more answers than questions:
+Let's explore some interesting facts from the data we have, that is: the top ranking question, answer, user, tags (i.e. skills) and the top ten gold badges. The top ranking answer applies to the top ranking question and they relate to `c++`, `performance` and code `optimization`. The top ten gold badges reveal that being awarded with a "Great Question"^[See https://stackoverflow.com/help/badges/22/great-question] is harder than for a "Great Answer"^[See https://stackoverflow.com/help/badges/25/great-answer], and it's no wonder why, since answers receive in average twice as many up votes as questions:
 ```{r exploration-basic,echo=TRUE,message=TRUE}
 # what's the question with highest score?
 prettyPrint(
@@ -476,14 +485,12 @@ prettyPrint(
     arrange(awarded)
 , latex_options = c("striped"))
 
-# compare the average scores answers vs questions
+# compare the average scores i.e. up votes for answers vs. questions
 prettyPrint(
   questions %>% 
-    mutate(postType='question') %>%
-    summarise(avg_score=mean(score)) %>%
+    summarise(postType='question',avg_score=mean(score)) %>%
     bind_rows(answers %>% 
-      mutate(postType='answer') %>% 
-      summarise(avg_score=mean(score)))
+      summarise(postType='answer',avg_score=mean(score)))
 , latex_options = c("striped"))
 ```
 
@@ -520,8 +527,8 @@ prettyPrint(
 , latex_options = c("striped"))
 ```
 
-In the following listing we apply the `log10` transformation^[We preferred to work with the `log10` for reputation because it's an order-invariant transformation, and easier to interpret than natural `log`.] to the users reputation and plot its histogram, the plot confirms that the users reputation is positively skewed. Remember that we set the user selection criteria to be: users with reputation greater than 999 or located in Switzerland, so there we have some of the users located in Switzerland to the left of $\text{log10}(999) \approx 3$ and we exclude them first:
-```{r histogram-reputation,echo=TRUE,message=TRUE,fig.cap="Histogram of users reputation"}
+In Figure \@ref(fig:histogram-reputation) we apply the `log10` transformation^[We preferred to work with the `log10` for reputation because it's an order-invariant transformation, and easier to interpret than natural `log`.] to the users reputation and plot its histogram, the plot confirms that the users reputation is positively skewed. Remember that we set the user selection criteria to be: users with reputation greater than 999 or located in Switzerland, so there we have some of the users located in Switzerland to the left of $\text{log10}(999) \approx 3$ and we exclude them first:
+```{r histogram-reputation,echo=TRUE,message=TRUE,fig.cap="Histogram of users reputation",fig.pos="H"}
 users %>%
   filter(reputation > 999) %>%
   mutate(reputation=log10(reputation)) %>%
@@ -534,7 +541,7 @@ users %>%
 ```
 
 Now, if we split the users per badges^[We chose only the badges relevant for our analysis see https://stackoverflow.com/help/badges] then the histograms look a bit nicer i.e. no longer so skewed but still asymmetrical and quite departed from a normal distribution:
-```{r histogram-reputation-facet, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE,message=TRUE,fig.cap="Histogram of users reputation per badge"}
+```{r histogram-reputation-facet, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE,message=TRUE,fig.cap="Histogram of users reputation per badge",fig.pos="H"}
 # histogram of the log10-transfored of users reputation per badge and 
 # excluding users with less than 999 reputation 
 users %>%
@@ -604,7 +611,7 @@ pca <- prcomp(X)
 ```
 
 Figure \@ref(fig:the-what-pca-variability) depicts the cumulative variability explained up to each principal component. We see that the first four components explain 50% of the variance, and only the first 30 components are required to explain ~95% of the variance:
-```{r the-what-pca-variability,echo=TRUE,message=FALSE,fig.cap="Variance explained up to each principal component"}
+```{r the-what-pca-variability,echo=TRUE,message=FALSE,fig.cap="Variance explained up to each principal component",fig.pos="H"}
 # let's consider the first 50 components only 
 pc <- 1:50
 
@@ -718,7 +725,7 @@ Figure \@ref(fig:the-what-visualization) reveals the skill groups that explain m
 \
 
 The grouping here is very interesting, The link between cloud and build tools is clear, since most of the cloud technologies are related to and require building and deploying software. Furthermore, it would seem that blockchain software is linked to deploying software in the cloud; likewise there seems to be a link between software deployment, cloud technologies, generating reports and data visualization.
-```{r the-what-visualization,echo=TRUE,message=FALSE,fig.cap="Top skills in each direction of the first two Principal Components PC1 and PC2"} 
+```{r the-what-visualization,echo=TRUE,message=FALSE,fig.cap="Top skills in each direction of the first two Principal Components PC1 and PC2",fig.pos="H"} 
 portable.set.seed(1)
 highlightLog %>% 
   filter(pc %in% c(1, 2)) %>%
@@ -840,7 +847,7 @@ map <- readObjectByName("SwissMap")
 ```
 
 Figure \@ref(fig:the-where-visualization) depicts the technology trends discovered in the previous analysis and now shown in geographical context for Switzerland. We note that Zurich is becoming a true technology center in Europe as all the trends are there. The most prominent data point by score in Switzerland was reached by an user located in Zurich posting on Full Stack development. We can also see that the east and south of Switzerland e.g. the Tessin region has much lower activity technology-wise therefore it wound't be a wise decision looking for technology jobs there. The data points appearing in the center of Switzerland correspond to users who were not precise in providing their specific location i.e. they specified their location as "Switzerland" and that's the center of Switzerland but technology-wise we should not expect to find anything in the middle of the mountains. Geneve city was surprisingly less active in quantity and quality or may be that users there didn't provide their location precisely enough. The city of Bern shows two high scoring data points connected to the technology trends Microsoft Stack and Python & C++ respectively. We can also note several users in isolated Swiss regions working on `ios` i.e. potentially building iPhone applications in remote areas which would make sense.
-```{r the-where-visualization, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=FALSE,fig.cap="Users located in Switzerland and their matching technology trends, weighted by score"}
+```{r the-where-visualization, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=FALSE,fig.cap="Users located in Switzerland and their matching technology trends, weighted by score",fig.pos="H"}
 # plot the top technology trends in Geo-context in Switzerland
 ggmap(map) + 
   scale_colour_manual(values = colorSpec) +
@@ -851,13 +858,13 @@ ggmap(map) +
         legend.title = element_blank(), legend.position="bottom")
 ```
 
-The top ten most prominent post data points in Switzerland are revealed using the following code:
-```{r the-where-top-ten, echo=TRUE, message=FALSE}
+The top most prominent post data points in Switzerland are revealed in Table \@ref(tab:the-where-top-ten).
+```{r the-where-top-ten, echo=TRUE, message=FALSE, fig.pos="H"}
 prettyPrint(
   usersChTop %>%
     top_n(10, score) %>%
     arrange(desc(score))
-)
+, caption = "Top most prominent posts from users located in Switzerland")
 ```
 
 ### The How: rating user skills
@@ -943,8 +950,8 @@ comp <- comp %>%
   mutate(badge = factor(badge, levels=badgesOrder))
 ```
 
-Here we take a look at the average reputations for users who have been granted the different badges of interest. The result gives us a rough idea of the order we are after. Recall that we've observed in Figure \@ref(fig:histogram-reputation) the users reputation to be highly skewed so we choose to work with the median as measure of central tendency instead of the mean. The result reveals that users granted with answer badges depict in average higher reputations than those granted question badges. We also note that users granted gold badges depict higher average reputation than that of users granted silver badges, similarly users granted silver badges tend to have higher reputations in average than users granted bronze badges.
-```{r badges-significance-avg, echo=TRUE, message=TRUE} 
+Table \@ref(tab:badges-significance-avg) depicts the average reputations for users who have been granted the different badges of interest. The result gives us a rough idea of the order we are after. Recall that we've observed in Figure \@ref(fig:histogram-reputation) the users reputation to be highly skewed so we choose to work with the median as measure of central tendency instead of the mean. The result reveals that users granted with answer badges depict in average higher reputations than those granted question badges. We also note that users granted gold badges depict higher average reputation than that of users granted silver badges, similarly users granted silver badges tend to have higher reputations in average than users granted bronze badges.
+```{r badges-significance-avg, echo=TRUE, message=FALSE, fig.pos="H"} 
 # checkout the average reputation ordering by badge to get an idea though
 # this is not the exact final ordering used due to the exclusion system.
 prettyPrint(
@@ -954,14 +961,14 @@ prettyPrint(
     group_by(class, badge) %>%
     summarise(avg_reputation=median(reputation)) %>%
     arrange(desc(avg_reputation))
-, latex_options = c("striped"))  
+, latex_options = c("striped"), caption = "Average user reputation per class \\& badge")  
 ```
 
 Note that since the `log` transformation preserves the order of the data i.e. if $x > y$ then $\text{log}(x) > \text{log}(y)$ and brings it to a nicer scale to work (e.g. for plotting) we're going to do conduct the following inference analysis using a `log10` transformation of the users reputation.
 \
 
 Figure \@ref(fig:badges-significance-answers-plot) reveals the user reputation ordering difference between gold, silver and bronze for answer badges. We see that the average within each group matches the expected level of the class i.e. users granted gold answer badges depict higher reputation average than those granted with silver and bronze answer badges. The vertical dashed lines show the median for each class:
-```{r badges-significance-answers-plot, echo=TRUE, message=TRUE, fig.cap="Histograms of users reputation per Answer badges"}
+```{r badges-significance-answers-plot, echo=TRUE, message=TRUE, fig.cap="Histograms of users reputation per Answer badges",fig.pos="H"}
 # create color specification for the different badges
 colorSpec <- c("#f9a602", "#c0c0c0", "#cd7f32")
 names(colorSpec) <- c("gold", "silver", "bronze")
@@ -1020,7 +1027,7 @@ summaryRep <- comp %>%
 
 ```
 
-```{r badges-significance-plot, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Reputation for random samples of 1500 users in each badge \\& class combination"}
+```{r badges-significance-plot, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Reputation for random samples of 1500 users in each badge \\& class combination",fig.pos="H"}
 # set the seed again (we need it here to get predictable bootstrap results)
 portable.set.seed(1)
 # plot the badge & class combinations to match an ordering for the ratings
@@ -1161,25 +1168,25 @@ local({
 The code for generating the `ratings` dataset is implemented in the second half of the `create_dataset.r` script. Assembling the `ratings` dataset proved to be a very challenging task on its own too because it required first replicating the badge selection criteria documented in the definition of the badges and more importantly because of bringing the tags (or skills) into first normal form^[See https://en.wikipedia.org/wiki/First_normal_form] i.e. tags are pipe-separated and we need them in a tag per row format instead, to be able to use relational operators. For this purpose, we used the function `tidyr::separate_rows` e.g. `tidyr::separate_rows(tags, sep="\\|")`. However, the expansion of millions of rows leads to hundreds of millions of rows which in a single thread would take a very long time to compute and easily overflow our 32GB system RAM. Therefore we again leveraged on the multi-core parallel architecture^[Using `parallel::mclapply(...)` see https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html] and a blocking strategy to come up with a parallel and memory-bound divide and conquer approach which can be found in the `create_dataset.r` function `parBlockSeparate(...)` implementation. We can control the computation time and memory used with the parameters `ncore` and `blockSize` respectively.
 \
 
-We successfully compiled the `ratings` dataset and it includes the following main columns: `userId`, `skill` and `rating`; other columns were included for debugging, traceability^[To find which question or answer lead an user to receive a given rating.] and to build model features e.g. `firstPostDate` which will be discussed later. 
-```{r structure-ratings,echo=TRUE,message=TRUE}
+We successfully compiled the `ratings` dataset and as depicted in Table \@ref(tab:structure-ratings) it includes the following main columns: `userId`, `skill` and `rating`; other columns were included for debugging, traceability^[To find which question or answer lead an user to receive a given rating.] and to build model features e.g. `firstPostDate` which will be discussed later. 
+```{r structure-ratings, echo=TRUE, message=TRUE, fig.pos="H"}
 # read the ratings dataset
 ratings <- readObjectByName("Ratings")
 
-prettyPrint(head(glimpse(ratings)))
+prettyPrint(head(glimpse(ratings)), caption = "Ratings dataset structure")
 ```
 
-We can see the measures of central tendency and dispertion of the ratings using the following code:
-```{r ratings-rating-avg, echo=TRUE, message=TRUE}
+We can see in Table \@ref(tab:ratings-rating-avg) the measures of central tendency and dispersion of the ratings using the following code:
+```{r ratings-rating-avg, echo=TRUE, message=TRUE, fig.pos="H"}
 # check the average
 prettyPrint(
   ratings %>%
     summarise(median = median(rating), mean = mean(rating), sd = sd(rating))
-, latex_options = c("striped"))
+, latex_options = c("striped"), caption = "Ratings dataset measures of central tendency and dispersion")
 ```
 
 The following histogram plot depicts the distribution of the `ratings` dataset. We see that the lowest rating is 1.5 and goes by steps of 0.5 all the way to 5.0:
-```{r ratings-rating-dist, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Histogram of user skill ratings dataset"}
+```{r ratings-rating-dist, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Histogram of user skill ratings dataset",fig.pos="H"}
 # checkout the ratings histogram, it's nicely bell shaped
 ratings %>% 
   ggplot(aes(rating, fill=..x..)) + geom_histogram() +
@@ -1206,7 +1213,7 @@ summaryRep <- comp %>%
 ```
 
 At this point we're ready to assess whether the user reputation average differences are significant per rating group. We take N random samples from each rating group and again use the $BC_a$ method to construct 95% confidence limits. Figure \@ref(fig:ratings-sig-comp) shows that several rating groups do not seem to be significatively different; namely, the $BC_a$ confidence limit notches clearly overlap for ratings 3, 3.5, 4, and 4.5:
-```{r ratings-sig-comp, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Boxplot of the users reputation per class \\& badge"}
+```{r ratings-sig-comp, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Boxplot of the users reputation per class \\& badge",fig.pos="H"}
 # set the seed again
 portable.set.seed(1)
 comp %>%
@@ -1251,8 +1258,8 @@ In this section we'll build a recommender system for predicting user skill ratin
 $$
 \text{RMSE} = \sqrt{\frac{1}{N} \sum_{i,j} (\hat{r}_{i,j} - r_{i,j})^2}
 $$
-Let's get some basic information about the `ratings` dataset e.g. sparsity. We have 199.8k users and 2k skills^[These are the top 2k skills we have used before that account for 82.3% of the total taggings.] and a highly sparse dataset i.e. only about 1.4% of all the possible user skill ratings:
-```{r modeling-approach-basic, echo=TRUE, message=TRUE}
+Let's get some basic information about the `ratings` dataset e.g. sparsity. Table \@ref(tab:modeling-approach-basic) shows there are 199.8k users and 2000 skills^[These are the top 2000 skills we have used before that account for 82.3% of the total taggings.] and a highly sparse dataset i.e. only about 1.4% of all the possible user skill ratings:
+```{r modeling-approach-basic, echo=TRUE, message=TRUE, fig.pos="H"}
 # what's the number of unique users, skills and how sparse is it?
 prettyPrint(
   ratings %>% 
@@ -1261,7 +1268,8 @@ prettyPrint(
               n = n()) %>%
     mutate(sparsity=sprintf("%.1f%%", 100*n / (users*skills))) %>%
     select(users, skills, sparsity)
-, latex_options = c("striped"))
+, latex_options = c("striped"), 
+caption = "Number of unique users, skills and the sparsity level")
 ```
 
 We start by separating the `ratings` dataset into training 90% and test 10% sets as shown in the following listing. We will use the train set for calibration (i.e. cross validation) and training and the test set exclusively for out-of-sample evaluation of the models:
@@ -1359,14 +1367,14 @@ prettyPrint(
 , latex_options = c("striped"))
 ```
 
-At this point we are in a place to account for more interesting effects. Let's consider adding an user-specific feature to model temporal effects: smoothing the amount of week blocks since an user first posted about a specific skill to the time of the post rating or, put more intuitively, the elapsed time since an user started gaining experience in a skill to the time of the current rating. We call this effect the user experience effect $b_e$ on a skill. We included in the `ratings` the column `firstPostDate` corresponding to the timestamp when an user made a post connected to a skill for the first time. We include this timestamp in every rating since it's an attribute that applies to every unique `userId`, `skill` combination and it's the input needed for generating the new feature. The elapsed time in week blocks is calculated using the code `week_block_30 = ceiling(as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock)))` with the help of `lubridate` package's functions `lubridate::as.duration`^[See https://lubridate.tidyverse.org/reference/duration.html], the interval creation operator `%--%`^[See https://lubridate.tidyverse.org/reference/interval.html] and duration in weeks `lubridate::dweeks`^[See https://lubridate.tidyverse.org/reference/duration.html]. Our initial baseline model is then extended as follows:
+We find ourselves now in a place to account for more interesting effects. Let's consider adding an user-specific feature to model temporal effects: smoothing the amount of week blocks since an user first posted about a specific skill to the time of the post rating or, put more intuitively, the elapsed time since an user started gaining experience in a skill to the time of the current rating. We call this effect the user experience effect $b_e$ on a skill. We included in the `ratings` dataset the column `firstPostDate` corresponding to the timestamp when an user made a post connected to a skill for the first time. We include this timestamp in every rating since it's an attribute that applies to every unique `userId`, `skill` combination and it's the input needed for generating the new feature. The elapsed time in week blocks is calculated using the code `week_block_30 = ceiling(as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock)))` with the help of `lubridate` package's functions `lubridate::as.duration`^[See https://lubridate.tidyverse.org/reference/duration.html], the interval creation operator `%--%`^[See https://lubridate.tidyverse.org/reference/interval.html] and duration in weeks `lubridate::dweeks`^[See https://lubridate.tidyverse.org/reference/duration.html]. Our initial baseline model is then extended as follows:
 
 $$
 J_{\text{baseline}} = \frac{1}{N} \sum_{i,j} (r_{i,j} - (\mu + b_i + b_j + f_{\text{smooth}}(b_e)))^2 + \lambda \left( \sum_{i}b_i^2 + \sum_{j}b_j^2 \right)
 $$
 
 Figure \@ref(fig:baseline-temp-effects-plot) depicts a `loess` smoothing of the effect $b_e$ after discounting all others and illustrates how strong this gained experience temporal effect is. We note how the effect has a relatively big range and a potential impact to the RMSE of approximately 0.4. We should also note how interesting this is, from the time the user first starts looking at a skill, the effect starts increasing until it reaches a peak on approximately 2.5 times 30 week blocks i.e. approximately 1.5 years. According to Figure \@ref(fig:baseline-temp-effects-plot) this is the average experience time needed for an user to reach her peak rating for a skill. After the peak rating is reached, we notice that the experience gained effect reaches a plateau and starts to fluctuate meaning users either: continue improving that skill or move on to other skill topics or simply the skill becomes irrelevant. There could also be a changing job or projects effect involved:
-```{r baseline-temp-effects-plot, echo=TRUE, message=TRUE, fig.cap="Smoothing function of the temporal effect gained experience"}
+```{r baseline-temp-effects-plot, echo=TRUE, message=TRUE, fig.cap="Smoothing function of the temporal effect gained experience", fig.pos="H"}
 # show the effects of number of week blocks since first post 
 weeksBlock <- 30
 # this week blocks corresponds approximately to 7 months
@@ -1385,8 +1393,8 @@ trainSet %>%
   geom_smooth(color="red", span=0.3, method.args=list(degree=2))
 ```
 
-We then add the $b_e$ effect to our model:
-```{r baseline-temp-effects, echo=TRUE, message=TRUE}
+We then add the $b_e$ effect to our model as shown in Table \@ref(tab:baseline-temp-effects):
+```{r baseline-temp-effects, echo=TRUE, message=TRUE, fig.pos="H"}
 # fit a loess smoothing to model the "experience gained" temporal effect
 weeksBlockFit <- trainSet %>%
   left_join(userEffects, by='userId') %>%
@@ -1412,10 +1420,11 @@ rmseResults <- bind_rows(rmseResults,
                                                      trainSet$rating)))
 prettyPrint(
   rmseResults
-, latex_options = c("striped"))
+, latex_options = c("striped"),
+caption = "Baseline simpler CF model in-sample RMSE")
 ```
 
-We reached an impressive RMSE=`0.6126687` in-sample. Let's see how our baseline model performs out-of-sample using the test set:
+We reached a RMSE=`0.6319561` in-sample. Let's see how our baseline model performs out-of-sample using the test set:
 ```{r baseline-test-rmse, echo=TRUE, message=TRUE}
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- testSet %>%
@@ -1431,12 +1440,16 @@ cat(sprintf("baseline RMSE on test data is %.9f\n", rmseValue))
 stopifnot(abs(rmseValue - 0.653410415) < 1e-9)
 ```
 
-We reached an out-of-sample RMSE=`0.653410415` which is reasonable and ties in with the significance of ratings found and discussed in previous sections i.e. we can't expect a much lower RMSE when the population average reputation differences between rating groups e.g. `3.5-4.0` aren't significative. Note that we haven't calibrated this baseline model properly, we've simply manually experimented with the hyper-parameters: $\lambda$, `weeksBlock`, loess `span` and `degree` and found the following best hyper-parameters combination for illustrative purposes:
+We reached an out-of-sample RMSE=`0.653410415` which is reasonable and ties in with the lack of significance between some ratings groups previously discussed i.e. we can't expect a much lower RMSE when the population average reputation differences between rating groups e.g. `3.5-4.0` aren't significative.
+\
+
+Note that we haven't calibrated this baseline model properly, we've simply manually experimented with the hyper-parameters: $\lambda$, `weeksBlock`, loess `span` and `degree` and found the following best hyper-parameters combination for illustrative purposes:
 
 * Lambda $\lambda=4$
 * `weeksBlock=30` number of week blocks between user's first exposure to the skill and the time of the rating.
 * Loess temporal model smoothing parameter `span=0.3`.
 * Loess temporal model `degree=2`.
+\
 
 We could keep on exploring, adding features and accounting for more interesting effects that would lower our RMSE even further^[For example, the number of user posts for a skill or the number of answers to questions ratio for a skill, etc.]; adding many features increases model complexity and hinders usability in practice. Notice that in order to predict user skill ratings using our baseline model we require the user to inform us with the elapsed time in 30 week blocks since she first started looking at a skill, as this is a required predictor variable of our model. At this point we have a baseline, reference RMSE and we can move on to a more advanced model that only requires the past ratings, nothing else, to learn and make predictions.
 
@@ -1618,6 +1631,7 @@ The following code listing corresponds to the core of the SGD algorithm implemen
         Q[,l$jj] <- l$Qjj
       }      
     }
+  }
 ```
 
 Our SGD implementation is integrated with the popular machine learning R package `caret`^[See https://cran.r-project.org/web/packages/caret/] as a custom `lrmf` model^[See using your own model in train https://topepo.github.io/caret/using-your-own-model-in-train.html], and thus we take advantage of all the caret infrastructure for calibration, training and prediction in addition to making our code easier to understand, maintain and reuse.
@@ -1996,14 +2010,14 @@ cvFit <- train(x = calibrationSet,
                batchSize = 100)
 toc()
 
-## The bestTune model found is:
+## the bestTune model found is:
 stopifnot(cvFit$bestTune$K == 10)
 stopifnot(cvFit$bestTune$gamma == 0.1)
 stopifnot(cvFit$bestTune$lambda == 0.03)
 stopifnot(cvFit$bestTune$sigma == 0.05)
 ```
 
-We can then train our model on all training data^[Actually we train the LRMF model on a small fraction ~0.5% of the training set.]. We train both the parallel and classic models using the exact same number of sample updates 27k (i.e. `maxIter*batchIter`) to compare them. The parallel is trained with half the `maxIter` compensated with doubling the `batchIter`.
+We can then train our model on all training data^[Actually we train the LRMF model on a small fraction ~0.5% of the training set.]. We train both the parallel and classic models using the exact same number of sample updates 27000 (i.e. `maxIter*batchIter`) to compare them. The parallel is trained with half the `maxIter` compensated with doubling the `batchIter`.
 ```{r lrmf-train-all, echo=TRUE, message=TRUE}
 tic('training LRMF on the full training set - parallel')
 # set the seed again
@@ -2049,8 +2063,8 @@ rmseHist <- rmseHist %>%
               add_column(method="Classic"))
 ```
 
-In Figure \@ref(fig:lrmf-convergence) reveals that the parallel implementation arrives to comparable RMSE in about half the time than the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction. This we can see in the RMSE convergence for the parallel case being more bumpy compared to the classic:
-```{r lrmf-convergence, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Convergence comparison between classic and parallel implementations"}
+Figure \@ref(fig:lrmf-convergence) reveals that the parallel implementation arrives to a comparable RMSE in about half the time of the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction. This we can see in the RMSE convergence for the parallel case being more bumpy compared to the classic:
+```{r lrmf-convergence, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Convergence comparison between classic and parallel implementations", fig.pos="H"}
 # plot the convergence for the model on the full training data
 colorSpec <- c("salmon", "turquoise3")
 names(colorSpec) <- c("Classic", sprintf("Parallel - %d cores", ncores))
@@ -2077,7 +2091,7 @@ rmseHist %>%
         legend.text=element_text(size = 12))
 ```
 
-At this point, we're ready to test our trained model in the out-of-sample test set. We reached an RMSE=`0.684472449` and RMSE=`0.667113795` for the parallel and classic respectively. Note that we didn't improve over the simpler baseline model in the out-of-sample but we arrived close:
+At this point, we're ready to test our trained model in the out-of-sample test set. In the out-of-sample we've reached a RMSE=`0.684472449` and RMSE=`0.667113795` for the parallel and classic respectively. Note that we didn't improve over the simpler baseline model in the out-of-sample but we arrived close:
 ```{r lrmf-test-rmse, echo=TRUE, message=TRUE}
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- predict(fitPar, testSet)
@@ -2094,19 +2108,19 @@ cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 stopifnot(abs(rmseValue - 0.667113795) < 1e-9)
 ```
 
-Now we're ready to test drive our model on the author's data. A question posed in the introduction was to predict the author^[See https://stackoverflow.com/users/1142881] ratings in skills for which there is no previous evidence. For example, how high would the author be rated on skill `tableau`? and whether it was a sound decision to reject the author as candidate applying for a job that had `tableau` as requirement simply because the candidate had not used that specific skill before? In order to do that let's first take a look at the skills where the author is top rated:
-```{r results-top-skills, echo=TRUE, message=TRUE}
+Now we're ready to test drive our model on the author's data. A question posed in the introduction was to predict the author^[See https://stackoverflow.com/users/1142881] ratings in skills for which there is no previous evidence. For example, how high would the author be rated on skill `tableau`? and whether it was a sound decision to reject the author as candidate applying for a job that had `tableau` as requirement simply because the candidate had not used that specific skill before? In order to do that let's first take a look at Table \@ref(tag:results-top-skills) and notice the skills where the author is top rated:
+```{r results-top-skills, echo=TRUE, message=TRUE, fig.pos="H"}
 # where is the author top rated?
 prettyPrint(
   ratings %>% 
     filter(userId == 1142881) %>%
     top_n(20, rating) %>%
     arrange(desc(rating), skill)
-)
+, caption = "Skills where the author is top rated according to his Stack Overflow activity")
 ```
 
-Let's find the skills for which there is no previous evidence, that's it, those skills for which the author doesn't have any observed ratings. Then compute the average ratings for all users that have been rated on those skills and compute the predicted author's rating on those skills. We then output the author's predicted ratings for some interesting technologies and notice that he's predicted to be way above average for skill `tableau` confirming his initial hunch, this time using a machine learning model. Finally we output the top 20 skills where the author is predicted to rate above average and in descending predicted rating order. It could be worthwhile following the recommendation of our model and learn those skills:
-```{r results-rating-predictions, echo=TRUE, message=TRUE}
+Let's find the skills for which there is no previous evidence, that's it, those skills for which the author doesn't have any observed ratings. Then compute the average ratings for all users that have been rated on those skills and compute the predicted author's rating on those skills. We then output the author's predicted ratings for some interesting technologies in Table \@ref(tab:results-rating-predictions) and notice that he's predicted to be way above average for skill `tableau` confirming his initial hunch, this time using a machine learning model. Finally in Table \@ref(tab:results-rating-predictions-above-avg) we output the top 20 skills where the author is predicted to rate above average and in descending predicted rating order. It could be worthwhile following the recommendation of our model and learn those skills:
+```{r results-rating-predictions, echo = TRUE, message = TRUE, fig.pos = "H"}
 # find the skills for which there are no ratings i.e. there is no evidence
 noEvidenceSkills <- mainSkills %>%
   anti_join(ratings %>% 
@@ -2131,7 +2145,7 @@ newdata <- noEvidenceSkills %>%
 # compute skill rating predictions
 newdata$predicted <- predict(fitSeq, newdata)
 
-# show how would be rated for the following hot technologies
+# show how would be rated for the following interesting technologies
 prettyPrint(
   newdata %>% 
     filter(skill %in% c("blockchain", "haskell", "klotin", "apache-kafka", 
@@ -2139,31 +2153,41 @@ prettyPrint(
                         "c++17", "spring-mvc", "ejb", "game-physics", 
                         "go", "java-stream", "teradata", "itext")) %>%
     arrange(desc(predicted))
-, latex_options = c("striped"))
+, latex_options = c("striped"), 
+caption = "Author rating predictions for some interesting technologies")
+```
 
+```{r results-rating-predictions-above-avg, echo = TRUE, message = TRUE, fig.pos = "H"}
 # show the top 20 skills where the predicted rating is above average
 prettyPrint(
   newdata %>% 
     filter(predicted > avg) %>% 
     top_n(20, predicted) %>%
     arrange(desc(predicted))
-, latex_options = c("striped"))
+, latex_options = c("striped"),
+caption = "Skill predictions where the author is rated above average")
 ```
 
 # Conclusion {-}
 
-In this work we have unveiled multiple data science analysis use-cases possible by studying the Stack Overflow data. There are many more interesting questions we could answer using this dataset e.g. how the question sentiment affects the reputation of the users and the score of the questions asked or how is a question predicted to score? However, in this study we have focussed on topics of more practical relevance and in the context of the technology recruitment industry i.e. clustering skills, identifying technology trends and putting them in geographical context. Furthermore, we have derived and designed a new user skill ratings dataset and presented a recommender system implementation to predict user skill ratings that offers many interesting uses in practice.
+In this work we have unveiled multiple data science analysis use-cases possible by studying the Stack Overflow data. There are many more interesting questions we could answer using this dataset, for example: 
+
+* how does the question sentiment affect the reputation of the users?
+* how does the sentiment also affect the score of the posts? 
+* how is a post predicted to score? 
+
+However, in this study we have focussed on topics of more practical relevance and in the context of the technology recruitment industry i.e. clustering skills, identifying technology trends and putting them in geographical context. Furthermore, we have derived and designed a new user skill ratings dataset and presented a recommender system implementation to predict user skill ratings that offers many interesting uses in practice.
 \
 
-First we've built a fully automated R script to: download, extract, parse, clean and store the Stack Overflow data. It was already a challenge to start with since some of the extracted XML files reached 75GB in size. We applied blocking and parallel processing in this and other areas of this work.
+First we've built a fully automated R script to: download, extract, parse, clean and store the Stack Overflow data. It was already a challenge to start with since some of the extracted XML files expand to 75GB in size. We applied blocking and parallel processing in this and other areas of this work.
 \
 
 We successfully applied dimensionality reduction in two different areas, first we applied PCA to the co-occurrence matrix of skills in questions and in order to identify the main technology trends occurring in the last ten years. As discussed, running this analysis in a rolling time window fashion we would discover the changes in technology trends over different periods of time. As result of this analysis we learned from the first principal component that the technologies explaining most of the variance in the data are related to blockchain, cloud computing, build, deployment tools and data visualization. Although not totally surprising it's interesting to see that blockchain seems to be applied in many different contexts. Another take away result is that cloud computing is ubiquitous. It's definitely a strong asset for any technology professional to master.
 \
 
-Placing the main technology trends in geographical context for the Stack Overflow users located in Switzerland reveals that Zurich has become a technology center. We identified all the main trends there, and a high quantity and quality of Stack Overflow users posting from Zurich. Indeed most of the big technology players have been expanding to Zurich including: Google, Microsoft, Facebook, Oracle, and others. We noticed too that the south-east parts of Switzerland e.g. Tessin don't seem to be too active technology-wise at least this isn't obvious by looking at the number of Stack Overflow users posting from that location. We expected to see above average blockchain activity in Zug believed to be a cryptocurrency haven but this doesn't seem to be the case again judging by the top posts from users located in that area.
+Placing the main technology trends in geographical context for the Stack Overflow users located in Switzerland reveals that Zurich has become a technology center. We identified all the main trends there, and a high quantity and quality of Stack Overflow users posting from this location. Indeed most of the big technology players have been expanding to Zurich including: Google, Microsoft, Facebook, Oracle, and others. We noticed too that the south-east parts of Switzerland e.g. Tessin don't seem to be too active technology-wise at least this isn't obvious by looking at the number of Stack Overflow users posting those locations. We expected to see above average blockchain activity in Zug believed to be a cryptocurrency haven but this doesn't seem to be the case again judging by the top posts from users located in that area.
 \
 
-We then focussed on building a new derived `ratings` dataset where we surprised ourselves facing an interesting statistical inference challenge. Namely to estimate the significance of the reputation average differences among class and badge user groups. The result of this challenge led to our user skill rating assignment strategy. Building the `ratings` dataset was also an performance challenge which we attacked using, once more, blocking and parallel processing. Finally, we built and tested our new user skill rating recommender system which delivered interesting and useful results.
+We then focussed on building a new derived `ratings` dataset where we surprised ourselves facing an interesting statistical inference challenge. Namely to estimate the significance of the user reputation average differences between the different class and badge groups. The result of this challenge led to our user skill rating assignment strategy. Building the `ratings` dataset was also an performance challenge which we attacked using, once more, blocking and parallel processing. Finally, we built and tested our new user skill rating recommender system which delivered interesting and useful results.
 
 # Bibliography {-}
