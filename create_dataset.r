@@ -846,7 +846,7 @@ toc()
 # expected total number of ratings
 stopifnot(nrow(ratings) == 5442999)
 # expected global mean of ratings
-stopifnot(abs(mean(ratings$rating) - 3.249213) < 1e-6)
+stopifnot(abs(mean(ratings$rating) - 3.266489) < 1e-6)
 # consistency check: only one rating per distinct user and skill
 stopifnot(nrow(ratings %>% group_by(userId, skill) %>% filter(n() > 1)) == 0)
 
