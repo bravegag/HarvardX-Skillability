@@ -107,6 +107,9 @@ knitr::opts_chunk$set(
 # knitr global settings - By default, the final document will not include source code unless
 # expressly stated.
 knitr::opts_chunk$set(
+  # Figure position hold
+  fig.pos = 'H',
+  
   # Chunks
   eval = TRUE,
   cache = TRUE,
@@ -1086,7 +1089,7 @@ for (i in 1:ncol(c)) {
 ```
 
 The final ordering is summarized in the following Table \@ref(tab:badges-ratings-assignment)^[For more information on the Stack Overflow badges see https://stackoverflow.com/help/badges]. Note that we filter the last three rating levels "Other Questions" by `viewCount` being greater than 2.5k views, and thus we only consider question that have attracted certain level of interest:
-```{r badges-ratings-assignment}
+```{r badges-ratings-assignment, fig.pos="H"}
 local({
   tbl <- data.frame(
     Badge = c("Populist", 
@@ -1147,36 +1150,38 @@ local({
                    "Questions with score between [0, 2)  & viewCount > 2500")
   , stringsAsFactors = F)
   
-  links <- tibble(Badge=c("Populist", 
-                          "Great Answer", 
-                          "Guru", 
-                          "Good Answer",
-                          "Nice Answer",
-                          "Great Question",
-                          "Good Question",
-                          "Nice Question"),
-                 url=c("https://stackoverflow.com/help/badges/62/populist", 
-                       "https://stackoverflow.com/help/badges/25/great-answer",
-                       "https://stackoverflow.com/help/badges/18/guru", 
-                       "https://stackoverflow.com/help/badges/24/good-answer",
-                       "https://stackoverflow.com/help/badges/23/nice-answer", 
-                       "https://stackoverflow.com/help/badges/22/great-question", 
-                       "https://stackoverflow.com/help/badges/21/good-question", 
-                       "https://stackoverflow.com/help/badges/20/nice-question"))  
-  
+  # links <- tibble(Badge=c("Populist", 
+  #                         "Great Answer", 
+  #                         "Guru", 
+  #                         "Good Answer",
+  #                         "Nice Answer",
+  #                         "Great Question",
+  #                         "Good Question",
+  #                         "Nice Question"),
+  #                url=c("https://stackoverflow.com/help/badges/62/populist", 
+  #                      "https://stackoverflow.com/help/badges/25/great-answer",
+  #                      "https://stackoverflow.com/help/badges/18/guru", 
+  #                      "https://stackoverflow.com/help/badges/24/good-answer",
+  #                      "https://stackoverflow.com/help/badges/23/nice-answer", 
+  #                      "https://stackoverflow.com/help/badges/22/great-question", 
+  #                      "https://stackoverflow.com/help/badges/21/good-question", 
+  #                      "https://stackoverflow.com/help/badges/20/nice-question"))  
+  # 
   # tbl <- tbl %>%
   #   inner_join(links, by="Badge") %>%
+  #   #mutate(Badge = paste0("[", Badge, "](", url, ")")) %>%
   #   mutate(Badge = paste0("\\href{", url, "}{", Badge, "}")) %>%
   #   bind_rows(tbl %>% anti_join(links, by="Badge")) %>%
   #   select(Badge, Class, Rating, Conditions)
-  # kable(tbl, "latex", escape = F, booktabs = T) %>% 
-  
-  kable(tbl, "latex", caption = "Rating assignments per badge and class", booktabs = T) %>% 
-    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = T, 
-                  latex_options = c("striped")) %>% 
+
+  kable(tbl, format="latex", caption = "Rating assignments per badge and class", booktabs = T) %>% 
+    kable_styling(full_width = T, latex_options = NULL) %>% 
     column_spec(1, width = "2.7cm") %>% 
     column_spec(4, width = "9.6cm") %>% 
-    row_spec(0, bold = T)
+    row_spec(0, bold = T) %>%
+    row_spec(1:3, background = "#f9a602") %>%
+    row_spec(c(4:5, 9), background = "#c0c0c0") %>%
+    row_spec(c(6, 10), background = "#cd7f32")
 })
 ```
 
@@ -1547,7 +1552,7 @@ $$
 \
 We also implemented a lock-free multi-core parallel^[Using `parallel::mclapply(...)` see https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html] variation of the classic SGD algorithm that trains faster. The key idea is to work in parallel on mutually exclusive column subsets of the P and Q matrices. We create as many mutually exclusive matrix index subset combinations of P and Q as there are cores available. We achieve that by first creating a blocks specification^[See https://stackoverflow.com/questions/59154906]. For example, assuming a 3 core system we would have:
 
-```{r method-blocking-poc1, echo=TRUE, message=TRUE, fig.pos="H"}
+```{r method-blocking-spec, echo=TRUE, message=TRUE, fig.pos="H"}
 ncores <- 3
 bi <- rep(0:(ncores-1), ncores)
 bj <- (bi + rep(0:(ncores-1), 1, each = ncores)) %% ncores
@@ -1555,21 +1560,23 @@ blocks <- tibble(bi=bi, bj=bj)
 prettyPrint(
   blocks
 , latex_options = NULL, booktabs = F, 
-caption = "Parallel block groups specification, contains all possible permutations of 3 in 2") %>%
+caption = paste0("Parallel block groups specification, permutations ",
+                 "of cores (e.g. 3) in 2 (i.e. P and Q)")) %>%
   row_spec(1:3, background = "#E41A1C") %>%
   row_spec(4:6, background = "#377EB8") %>%
   row_spec(7:9, background = "#4DAF4A")
 ```
 
-Table \@ref(tab:method-blocking-poc1) depicts the blocks specification containing 3 different block groups (every 3 consecutive rows) in i (users) and j (skills) to run in parallel and mutual exclusion. Therefore, selecting one of these three block groups randomly choosing rows as described in the following listing we can filter the matrices P and Q for users and skills that match those blocks and compute the gradient updates corresponding to those blocks in parallel:
-```{r method-blocking-poc2, echo=TRUE, message=TRUE}
+Table \@ref(tab:method-blocking-spec) depicts the blocks specification containing 3 different block groups (every 3 consecutive rows) in i (users) and j (skills) to run in parallel and mutual exclusion. Therefore, selecting one of these three block groups randomly choosing rows as described in the following listing we can filter the matrices P and Q for users and skills that match those blocks and compute the gradient updates corresponding to those blocks in parallel:
+```{r method-blocking-first, echo=TRUE, message=TRUE}
 # first group of mutually exclusive blocks
 prettyPrint(blocks %>% slice(1:3), 
-            latex_options = NULL, booktabs = F) %>% 
+            latex_options = NULL, booktabs = F, 
+            caption = "First parallel block group - 3 cores") %>% 
   row_spec(1:3, background = "#E41A1C")
 ```
 
-In this case one core will work on users and skills whose `i %% ncores == 0 & j %% ncores == 0` respectively, another core will work on `i %% ncores == 1 & j %% ncores == 1` and the third core on `i %% ncores == 2 & j %% ncores == 2`. However, doing so will only train those block combinations. Therefore at every iteration of the algorithm and before running the batch updates, we randomly choose which of the three block groups to use, either: `blocks[1:3,]`, `blocks[4:6,]` or `blocks[7:9,]` and each core will run batch updates in a loop ensuring maximum CPU utilization. We would of course like to run long batches in parallel but doing so may lead the SGD algorithm advancing in the wrong direction without any chance for correction.
+Table \@ref(tab:method-blocking-first) depicts the block group one. In this case, the first core will work on users and skills whose `i %% ncores == 0 & j %% ncores == 0` respectively, another core will work on `i %% ncores == 1 & j %% ncores == 1` and the third core on `i %% ncores == 2 & j %% ncores == 2`. However, doing so will only train those block combinations. Therefore at every iteration of the algorithm and before running the batch updates, we randomly choose which of the three block groups to use, either: `blocks[1:3,]`, `blocks[4:6,]` or `blocks[7:9,]` and each core will run batch updates in a loop ensuring maximum CPU utilization. We would of course like to run long batches in parallel but doing so may lead the SGD algorithm advancing in the wrong direction without any chance for correction.
 \
 
 The following code listing corresponds to the core of the SGD algorithm implementation as part of the function `lrmf$fit(...)` and including both, the classic and parallel variations. We iterate `maxIter` times as shown in line `#1`. Lines `#3` through `#18` correspond to the classic implementation. There we have the gradient P and Q updates and all operations are computed on the matrix columns as discussed before. Lines `#20` through `#80` correspond to the parallel implementation. There we pick a random block group and run `parIter` iterations on it. In lines `#54` through `#68` we accumulate the set of distinct updated indexes for the users and skills and return them along with the gradient updates. Finally the lines `#75` through `#79` "reduce" or consolidate the updates from all blocks into P and Q.
@@ -1690,10 +1697,10 @@ lrmf$parameters <- data.frame(parameter = c("K", "maxGamma", "lambda", "sigma"),
 # Define the required grid function, which is used to create the tuning grid (unless the user 
 # gives the exact values of the parameters via tuneGrid)
 lrmf$grid <- function(x, y, len = NULL, search = "grid") {
-  K <- 10
-  maxGamma <- c(0.02, 0.1)
-  lambda <- c(0.003, 0.005, 0.01, 0.03, 0.05)
-  sigma <- c(0.05, 0.1)
+  K <- c(10, 11, 12)
+  maxGamma <- c(0.05, 0.1, 0.11)
+  lambda <- seq(0.05, 0.1, by=0.01)
+  sigma <- c(0.05, 0.1, 0.15)
   
   # to use grid search
   out <- expand.grid(K = K,
@@ -1706,7 +1713,7 @@ lrmf$grid <- function(x, y, len = NULL, search = "grid") {
     out <- out %>%
       sample_n(100)
   }
-  out
+  return(out)
 }
 
 # Define the fit function so we can fit our model to the data.
@@ -2058,11 +2065,11 @@ cvFit <- train(x = calibrationSet,
                batchSize = 100)
 toc()
 
-## the bestTune model found is:
-stopifnot(cvFit$bestTune$K == 10)
-stopifnot(cvFit$bestTune$gamma == 0.1)
-stopifnot(cvFit$bestTune$lambda == 0.03)
-stopifnot(cvFit$bestTune$sigma == 0.05)
+## The bestTune model found is:
+stopifnot(cvFit$bestTune$K == 11)
+stopifnot(cvFit$bestTune$maxGamma == 0.05)
+stopifnot(cvFit$bestTune$lambda == 0.1)
+stopifnot(cvFit$bestTune$sigma == 0.15)
 ```
 
 We can then train our model on all training data^[Actually we train the LRMF model on a small fraction ~0.5% of the training set.]. We train both the parallel and classic models using the exact same number of sample updates 27000 (i.e. `maxIter*batchIter`) to compare them. The parallel is trained with half the `maxIter` compensated with doubling the `batchIter`.
@@ -2111,7 +2118,7 @@ rmseHist <- rmseHist %>%
               add_column(method="Classic"))
 ```
 
-Figure \@ref(fig:lrmf-convergence) reveals that the parallel implementation arrives to a comparable RMSE in about half the time of the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction. This we can see in the RMSE convergence for the parallel case being more bumpy compared to the classic:
+Figure \@ref(fig:lrmf-convergence) reveals that the parallel implementation arrives to a comparable RMSE in about half the time of the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction. This we can see in the RMSE convergence for the parallel case being more bumpy compared to the steady convergence of the classic algorithm. 
 ```{r lrmf-convergence, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Convergence comparison between classic and parallel implementations", fig.pos="H"}
 # plot the convergence for the model on the full training data
 colorSpec <- c("salmon", "turquoise3")
@@ -2139,24 +2146,24 @@ rmseHist %>%
         legend.text=element_text(size = 12))
 ```
 
-At this point, we're ready to test our trained model in the out-of-sample test set. In the out-of-sample we've reached a RMSE=`0.684472449` and RMSE=`0.667113795` for the parallel and classic respectively. Note that we didn't improve over the simpler baseline model in the out-of-sample but we arrived close:
+At this point, we're ready to test our trained model in the out-of-sample test set. We've reached a RMSE=`0.660806931` and RMSE=`0.650566815` in the test set for the parallel and classic algorithms respectively. Note that our SGD parallel method reached very close in RMSE to the baseline model and our classic SGD performed even better:
 ```{r lrmf-test-rmse, echo=TRUE, message=TRUE}
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- predict(fitPar, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.686592201) < 1e-9)
+stopifnot(abs(rmseValue - 0.660806931) < 1e-9)
 
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- predict(fitSeq, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.667113795) < 1e-9)
+stopifnot(abs(rmseValue - 0.650566815) < 1e-9)
 ```
 
-Now we're ready to test drive our model on the author's data. A question posed in the introduction was to predict the author^[See https://stackoverflow.com/users/1142881] ratings in skills for which there is no previous evidence. For example, how high would the author be rated on skill `tableau`? and whether it was a sound decision to reject the author as candidate applying for a job that had `tableau` as requirement simply because the candidate had not used that specific skill before? In order to do that let's first take a look at Table \@ref(tag:results-top-skills) and notice the skills where the author is top rated:
+Now we're ready to test drive our model on the author's data. A question posed in the introduction was to predict the author^[See https://stackoverflow.com/users/1142881] ratings in skills for which there is no previous evidence. For example, how high would the author be rated on skill `tableau`? and whether it was a sound decision to reject the author as candidate applying for a job that had `tableau` as requirement simply because the candidate had not used that specific skill before? In order to do that let's first take a look at Table \@ref(tab:results-top-skills) and notice the skills where the author is top rated:
 ```{r results-top-skills, echo=TRUE, message=TRUE, fig.pos="H"}
 # where is the author top rated?
 prettyPrint(
@@ -2164,10 +2171,10 @@ prettyPrint(
     filter(userId == 1142881) %>%
     top_n(20, rating) %>%
     arrange(desc(rating), skill)
-, caption = "Skills where the author is top rated according to his Stack Overflow activity")
+, caption = "Skills where the author is top rated given his Stack Overflow activity")
 ```
 
-Let's find the skills for which there is no previous evidence, that's it, those skills for which the author doesn't have any observed ratings. Then compute the average ratings for all users that have been rated on those skills and compute the predicted author's rating on those skills. We then output the author's predicted ratings for some interesting technologies in Table \@ref(tab:results-rating-predictions) and notice that he's predicted to be way above average for skill `tableau` confirming his initial hunch, this time using a machine learning model. Finally in Table \@ref(tab:results-rating-predictions-above-avg) we output the top 20 skills where the author is predicted to rate above average and in descending predicted rating order. It could be worthwhile following the recommendation of our model and learn those skills:
+Let's find the skills for which there is no previous evidence, that's it, those skills for which the author doesn't have any observed ratings. Then compute the average ratings for all users that have been rated on those skills and compute the predicted author's rating on those skills. We then output the author's predicted ratings for some interesting technologies in Table \@ref(tab:results-rating-predictions) and notice that he's predicted to stand above average for skill `tableau` confirming his initial hunch, this time using a machine learning model. Finally in Table \@ref(tab:results-rating-predictions-above-avg) we output the top 20 skills where the author is predicted to rate above average and in descending predicted rating order. It could be worthwhile following the recommendation of our model and learn those skills:
 ```{r results-rating-predictions, echo = TRUE, message = TRUE, fig.pos = "H"}
 # find the skills for which there are no ratings i.e. there is no evidence
 noEvidenceSkills <- mainSkills %>%
@@ -2237,7 +2244,7 @@ We explored the data and noticed many important details e.g. answers are twice a
 Placing the main technology trends in geographical context as shown in Figure \@ref(fig:the-where-visualization) for the Stack Overflow users located in Switzerland reveals that Zurich has become a technology center. We identified all the main trends there, and a high quantity and quality of Stack Overflow users posting from this location. Indeed most of the big technology players have been expanding to Zurich including: Google, Microsoft, Facebook, Oracle, and others. We noticed too that the south-east parts of Switzerland e.g. Tessin don't seem to be too active technology-wise at least this isn't obvious by looking at the number of Stack Overflow users posting those locations. We expected to see above average blockchain activity in Zug believed to be a cryptocurrency haven but this doesn't seem to be the case again judging by the top posts from users located in that area.
 \
 
-Finally, we shifted our focus to building a new dataset derived from Stack Overflow, the `ratings` dataset and we surprised ourselves facing an interesting statistical inference challenge. Namely to assess the significance of the user reputation average differences before and after building the `ratings` dataset. Before building the `ratings` dataset we assessed significance for the difference in user reputation averages between the class and badge groups, see Figure \@ref(fig:badges-significance-plot). After building the `ratings` dataset we assessed significance for the difference in user reputation averages between the rating groups, see Figure \@ref(fig:ratings-significance-plot). Due to the users reputation  strong departure from normality (see Figures \@ref(fig:histogram-reputation) and \@ref(fig:histogram-reputation-facet)) we tested significance of the difference in population medians and using the non-parametric $BC_a$ method see [@diciccio1996] and [@davison1997] for constructing 95% boostrap confidence limits. We verified the overlapping visual inspection of the confidence interval results using the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for all groups pair-wise. Three ratings groups were not found significatively different pair-wise and we gauged the impact in the user skill rating predictions. The result of this challenge led to our user skill rating assignment strategy described in Table \@ref(tab:badges-ratings-assignment). Building the `ratings` dataset was also a performance challenge which we attacked, once more, using blocking and parallel processing. Last but not least we built a new recommender system using the collaborative filtering technique and featuring two SGD algorithm flavours: classic and parallel. We used our model for predicting user skill ratings which delivered interesting and useful results.
+Finally, we shifted our focus to building a new dataset derived from Stack Overflow, the `ratings` dataset and we surprised ourselves facing an interesting statistical inference challenge. Namely to assess the significance of the user reputation average differences before and after building the `ratings` dataset. Before building the `ratings` dataset we assessed significance for the difference in user reputation averages between the class and badge groups, see Figure \@ref(fig:badges-significance-plot). After building the `ratings` dataset we assessed significance for the difference in user reputation averages between the rating groups, see Figure \@ref(fig:ratings-significance-plot). Due to the users reputation  strong departure from normality (see Figures \@ref(fig:histogram-reputation) and \@ref(fig:histogram-reputation-facet)) we tested significance of the difference in population medians and using the non-parametric $BC_a$ method see [@diciccio1996] and [@davison1997] for constructing 95% boostrap confidence limits. Using the confidence limits we tested for significance by visually inspecting that there wasn't any overlap between the confidence limits. We then verified the results using the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for all groups pair-wise. Three rating groups weren't found to be significatively different pair-wise and we gauged the impact in the user skill rating predictions. The result of this challenge led to our user skill rating assignment strategy described in Table \@ref(tab:badges-ratings-assignment). Building the `ratings` dataset was also a performance challenge which we attacked, once more, using blocking and parallel processing. Last but not least we built a new recommender system using the collaborative filtering technique and featuring two SGD algorithm flavours: classic and parallel. Our SGD implementation outperformed the baseline model out-of-sample and for a slim margin. Figure \@ref(fig:lrmf-convergence) depicts promising convergence properties for the parallel method, reaching results faster than the classic with a near 2x speed up. We used our model for predicting user skill ratings which delivered interesting and useful results.
 
 # Future Work {-}
 

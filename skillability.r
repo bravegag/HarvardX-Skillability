@@ -973,7 +973,7 @@ lrmf$grid <- function(x, y, len = NULL, search = "grid") {
     out <- out %>%
       sample_n(100)
   }
-  out
+  return(out)
 }
 
 # Define the fit function so we can fit our model to the data.
