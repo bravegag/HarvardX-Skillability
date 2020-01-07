@@ -34,7 +34,7 @@ if(!require(parallel)) install.packages("parallel", repos = "http://cran.us.r-pr
 if(!require(xml2)) install.packages("xml2", repos = "http://cran.us.r-project.org")
 if(!require(readr)) install.packages("readr", repos = "http://cran.us.r-project.org")
 if(!require(rstudioapi)) install.packages("rstudioapi", repos = "http://cran.us.r-project.org")
-if(!require(ggmap)) install.packages("rstudioapi", repos = "http://cran.us.r-project.org")
+if(!require(ggmap)) install.packages("ggmap", repos = "http://cran.us.r-project.org")
 if(!require(here)) install.packages("here", repos = "http://cran.us.r-project.org")
 
 ##########################################################################################
