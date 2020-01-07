@@ -19,18 +19,6 @@ rm(list = ls())
 # trigger garbage collection and free some memory if possible
 gc(TRUE, TRUE, TRUE)
 
-# switch over to US_en instead of the automatic de_CH
-Sys.setenv(LANG="en_US.UTF-8", 
-           LC_ADDRESS="en_US.UTF-8",
-           LC_IDENTIFICATION="en_US.UTF-8",
-           LC_MEASUREMENT="en_US.UTF-8",
-           LC_MONETARY="en_US.UTF-8",
-           LC_NAME="en_US.UTF-8",
-           LC_NUMERIC="en_US.UTF-8",
-           LC_PAPER="en_US.UTF-8",
-           LC_TELEPHONE="en_US.UTF-8",
-           LC_TIME="en_US.UTF-8")
-
 ##########################################################################################
 ## Install and load required library dependencies
 ##########################################################################################
@@ -47,7 +35,7 @@ if(!require(doMC)) install.packages("doMC", repos = "http://cran.us.r-project.or
 if(!require(parallel)) install.packages("parallel", repos = "http://cran.us.r-project.org")
 if(!require(microbenchmark)) install.packages("microbenchmark", repos = "http://cran.us.r-project.org")
 if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
-if(!require(ggmap)) devtools::install_github("dkahle/ggmap")
+if(!require(ggmap)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
 if(!require(ggrepel)) install.packages("ggrepel", repos = "http://cran.us.r-project.org")
 if(!require(scales)) install.packages("scales", repos = "http://cran.us.r-project.org")
 if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
