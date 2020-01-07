@@ -958,8 +958,8 @@ lrmf$parameters <- data.frame(parameter = c("K", "maxGamma", "lambda", "sigma"),
 # gives the exact values of the parameters via tuneGrid)
 lrmf$grid <- function(x, y, len = NULL, search = "grid") {
   K <- 5:10
-  maxGamma <- c(0.05, 0.1, 0.15)
-  lambda <- c(0.003, 0.005, 0.01, 0.03, 0.05)
+  maxGamma <- c(0.05, 0.1, 0.12)
+  lambda <- c(0.003, 0.005, 0.01, 0.03, 0.08)
   sigma <- c(0.05, 0.1)
   
   # to use grid search
@@ -1325,8 +1325,8 @@ toc()
 
 ## The bestTune model found is:
 stopifnot(cvFit$bestTune$K == 10)
-stopifnot(cvFit$bestTune$gamma == 0.1)
-stopifnot(cvFit$bestTune$lambda == 0.05)
+stopifnot(cvFit$bestTune$gamma == 0.05)
+stopifnot(cvFit$bestTune$lambda == 0.08)
 stopifnot(cvFit$bestTune$sigma == 0.1)
 
 ##########################################################################################
@@ -1390,13 +1390,13 @@ rmseHist %>%
            y = rmseHist %>% 
              filter(method == sprintf("Parallel - %d cores", ncores)) %>% 
              last() %>% 
-             pull(rmse) - 0.002,
+             pull(rmse) - 0.005,
            label = sprintf("%.2f sec", elapsedPar)) + 
   annotate("text", x = 250, colour = colorSpec[1],
            y = rmseHist %>% 
              filter(method == "Classic") %>% 
              last() %>% 
-             pull(rmse) - 0.002, 
+             pull(rmse) - 0.005, 
            label = sprintf("%.2f sec", elapsedSeq)) + 
   ggtitle("Users-skills rating prediction using LRMF - Parallel vs. classic method")
 
@@ -1409,14 +1409,14 @@ predictedRatings <- predict(fitPar, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.674396098) < 1e-9)
+stopifnot(abs(rmseValue - 0.666693065) < 1e-9)
 
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- predict(fitSeq, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.655253456) < 1e-9)
+stopifnot(abs(rmseValue - 0.650501932) < 1e-9)
 
 # using only ~0.5% of the ratings data
 percData <- 100*(125*216)/nrow(ratings)
