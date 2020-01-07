@@ -43,5 +43,5 @@ xml/
 7z/
 build/
 skillability.tex
-data/rds/UsersCH.rds
-data/rds/SwissMap.rds
+#data/rds/UsersCH.rds
+#data/rds/SwissMap.rds
