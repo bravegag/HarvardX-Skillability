@@ -947,8 +947,8 @@ lrmf$parameters <- data.frame(parameter = c("K", "maxGamma", "lambda", "sigma"),
 lrmf$grid <- function(x, y, len = NULL, search = "grid") {
   K <- 10
   maxGamma <- c(0.02, 0.1)
-  lambda <- c(0.003, 0.005, 0.01, 0.05)
-  sigma <- c(0.1)
+  lambda <- c(0.003, 0.005, 0.01, 0.03, 0.05)
+  sigma <- c(0.05, 0.1)
   
   # to use grid search
   out <- expand.grid(K = K,

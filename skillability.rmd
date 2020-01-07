@@ -245,7 +245,7 @@ code:after {
 **DISCLAIMER Third-Party Trademark Notice**: All third-party trademarks referenced in this report (i.e. tags or skills), whether in logo form, name form or product form, or otherwise remain the property of their respective owners, and are used here only to refer the credentials and proficiency of the Stack Overflow users in using the technology, products or supporting solutions. The use of these trademarks in no way indicates any relationship between the author of this report and their respective owners. The description of the capabilities regarding any of the listed trademarks does not imply any relationship, affiliation, sponsorship or endorsement and reference to those shall be considered nominative fair use under the trademark law. 
 
 # Introduction {-}
-If you ever programmed, faced a technical question and "Googled it", it's needless to say that you have already probably landed in the Stack Overflow^[https://www.stackoverflow.com] site. Stack Overflow is a platform aimed at programmers of all levels for asking and answering technical questions. The platform was created in 2008^[https://en.wikipedia.org/wiki/Stack_Overflow] and it's the most popular site as part of the Stack Exchange Network^[https://stackexchange.com/sites#]. The platform offers multiple features, the most popular one being the ability to up vote and down vote user posts (either questions or answers) contributing to the posting user's overall reputation. Based on reputation, the plaform enables users to reach different priviledges such as the ability to vote, comment and edit posts. Furthermore, users are awarded "badges" (i.e. achievements) that relate to: the overall reputation, answers, questions or even the frequency of use of the site. The author of this work is an avid user of the platform^[https://stackoverflow.com/users/1142881/] since its inception and has periodically used it more towards asking rather than answering technical questions. A result of the present work, is to more strongly consider using the site for **answering questions** rather than just asking.
+If you ever programmed, faced a technical question and "Googled it", it's needless to say that you have already probably landed in the Stack Overflow^[https://www.stackoverflow.com] site. Stack Overflow is a platform aimed at programmers of all levels for asking and answering technical questions. The platform was created in 2008^[https://en.wikipedia.org/wiki/Stack_Overflow] and it's the most popular site as part of the Stack Exchange Network^[https://stackexchange.com/sites#]. The platform offers multiple features, the most popular one being the ability to up vote and down vote user posts (either questions or answers) contributing to the posting user's overall reputation. Based on reputation, the plaform enables users to reach different priviledges such as the ability to vote, comment and edit posts. Furthermore, users are awarded "badges" (i.e. achievements) that relate to: the overall reputation, answers, questions or even the frequency of use of the site. The author of this work is an avid user of the platform^[https://stackoverflow.com/users/1142881/] since its inception and has periodically used it more towards asking rather than answering technical questions. A result of the present work is to more strongly consider using the site for **answering questions** rather than just asking.
 \
 
 Very luckily for us the Stack Overflow data is available for download^[https://archive.org/details/stackexchange] and in different formats, opening the door for conducting truly interesting data analysis with many applications in the context of the recruitment industry such as: resume (or CV) compilation^[https://www.kickstarter.com/projects/1647975128/one-thousand-words-cv-1kwcv/], job candidate shortlisting, job candidate assessment, staff skills assessment, technology trends analysis, and many more.
@@ -256,13 +256,13 @@ We first focus in delivering a fully automated method and R code to download, ex
 
 ### The What: skills and technology trends {-}
 
-Questions in Stack Overflow contain one or more tags e.g. [java](https://stackoverflow.com/questions/tagged/java]). For professionals who work in programming these tags are skills and they are listed as such in a resume (or CV)^[https://www.dropbox.com/s/6t7mq5zcztarah4/1kwcv_prototype_Giovanni.pdf?dl=1]. Therefore, in this analysis step we'd like to find the top skills by frequency of use, establish a proximity measure and discover skill groups. We're also very interested in discovering what major technology trends exist and their importance.
+Questions in Stack Overflow contain one or more tags e.g. [java](https://stackoverflow.com/questions/tagged/java]). For professionals who work in programming these tags are skills and would be listed as such in a resume (or CV)^[https://www.dropbox.com/s/6t7mq5zcztarah4/1kwcv_prototype_Giovanni.pdf?dl=1]. Therefore, in this analysis step we'd like to find the top skills by frequency of use, establish a proximity measure and discover skill groups. We're also  interested in discovering what major technology trends exist and their importance: in other words, how those skill clusters have evolved over time.
 \
 
 To this end, the top tags (or skills) are first selected. The key modeling approach (in NLP terms) is to view questions as "documents" and skills as "words" and count how many times skills occur pair-wise together in the same questions, therefore we generate a skills co-occurrence matrix. We then compute Principal Component Analysis (PCA) on the scaled co-occurrence matrix. The first two principal components reveal what are the skill groups that explain most of the variance in the data or how we like to call it the main "technology trends". We visualize the top and bottom ends of these two principal components. The remaining PCA components reveal other skill groups.
 \
 
-This first analysis step enpower us to answer many practical questions e.g. 
+This first analysis step enpower us to answer many practical questions, for example:
 
 * As a programmer: what are the main technology trends at the moment and which one shall I invest learning on?
 * As a company: we'd like to build a new product, which technology stack should we use? check the top components for the most popular stacks in the area required.
@@ -272,10 +272,10 @@ Note that applying this method in a rolling time window fashion e.g. every year 
 
 ### The Where: putting it in geographical context {-}
 
-Here we search for all Stack Overflow users in Switzerland, find their top technology skills looking into the tags linked to their top answers by score or otherwise top questions by score, and link these top skills to the top technology trends revealed in the first few PCA components of the previous analysis. We then use Google's [Geocoding API](https://developers.google.com/maps/documentation/geocoding/) and [Maps Static API](https://developers.google.com/maps/documentation/maps-static/) to compute the user locations (i.e. longitude and latitude) and extract a map of Switzerland respectively. Finally we put the main technology trends revealed by the previous analysis into geographical context. Note that due to the [Google Maps Platform Terms of Services](https://cloud.google.com/maps-platform/terms/#3-license) the geocoding results may not be cached, therefore to be able to execute and reproduce the results in this section you'd need a valid Google API key see [Get an API Key](https://developers.google.com/places/web-service/get-api-key) and make it available in your environment as `GOOGLE_API_KEY`. However, the few API calls needed will easily fit cost-free within a free trial version of the Google Maps API.
+Here we search for all Stack Overflow users in Switzerland, find their top technology skills looking into the tags linked to their top answers by score or otherwise top questions by score, and link these top skills to the top technology trends revealed in the first few PCA components of the previous analysis. We then use Google's [Maps Static API](https://developers.google.com/maps/documentation/maps-static/) and [Geocoding API](https://developers.google.com/maps/documentation/geocoding/) to extract a map of Switzerland and compute the user locations (i.e. longitude and latitude) respectively. Finally we put the main technology trends revealed by the previous analysis into geographical context. Note that due to the [Google Maps Platform Terms of Services](https://cloud.google.com/maps-platform/terms/#3-license) the geocoding results may not be cached, therefore to be able to execute and reproduce the results in this section you'd need a valid Google API key see [Get an API Key](https://developers.google.com/places/web-service/get-api-key) and make it available in your environment as `GOOGLE_API_KEY`. However, the few API calls needed will easily fit cost-free within a free trial version of the Google Maps API.
 \
 
-You may wonder why Switzerland? because it's where the author lives and Switzerland is a relatively small country which is nice in order to keep the geocoding costs low i.e. we need to call Google's Geocoding API for every^[Actually all the distinct user locations i.e. about four hundreds] user located in Switzerland. This second step enables answering very practical questions e.g. 
+You may wonder why Switzerland? because it's where the author lives and Switzerland is a relatively small country which is nice in order to keep the geocoding costs low i.e. we need to call Google's Geocoding API for every^[Actually all the distinct user locations i.e. about four hundreds] user located in Switzerland. This second step enables answering very practical questions, for example:
 
 * As a programmer: which locations should I consider to find jobs that match my main areas of expertise?
 * As a company: where do we find relevant partners and support on the technology areas we need?
@@ -287,18 +287,18 @@ You may wonder why Switzerland? because it's where the author lives and Switzerl
 The author of this work has in the past applied to jobs with listing describing requirements that include one or a few skills for which he had no previous experience. For example, he was recently rejected while applying for a position that required knowledge of Tableau^[See https://www.tableau.com/]. Indeed, he had no previous experience on this particular skill so it wasn't listed in his CV; however, he has extensive experience in data visualization using e.g. `d3.js` and `ggplot2`. His `sql` skill level is well above average too, therefore he intuitively felt that he would have nevertheless been a great match for that position and that's why he applied in the first place.
 \
 
-This project reminded of another anecdote, a collegue that was very unsure which graduate program to pursue. Surprisingly he decided to ask the admissions secretary and she recommended that he would be better off going for a master in Computational Biology and so he did. If a secretary can do it, can we not also trust a machine learning model to recommend what future career to pursue given your skill ratings?
+This project reminded of another anecdote regarding a collegue that was very unsure which graduate program to pursue. Surprisingly he decided to ask the admissions secretary who recommended that he would be better off going for a master in Computational Biology, and so he did. In addition to asking someone without a specialised scientific knowledge, could we not also trust a machine learning model to recommend what future career to pursue given your skill ratings?
 \
 
-In this final step a user skill `ratings` dataset derivation is designed, constructed and modeled to solve the ultimate task covered in this project: to predict how good a candidate would be in a skill for which there is no previous evidence. That's it, we present and implement a recommender system to predict user skill ratings using the collaborative filtering approach. More specifically, we'll apply the model-based approach using low-rank matrix factorization (LRMF) and two implementation variations of the stochastic gradient descent (SGD) algorithm. The first algorithm is based on the classic SGD with multiple improvements for faster and better convergence e.g. cast the `P` and `Q` matrices of the SGD algorithm in column major ordering to match the R's default matrix memory ordering. The second algorithm is an R-based lock-free parallel multi-core SGD variation of the first featuring a speed up of roughly 2x with comparable high quality out-of-sample RMSE result and with potential for higher speed ups. However, we first navigate through a simpler baseline model implementation based on isolating the different biases or effects and there we'll outline some interesting findings. 
+In this final step a user skill `ratings` dataset derivation is designed, constructed and modeled to solve the ultimate task covered in this project: to predict how good a candidate would be in a skill for which there is no previous evidence. That's it, we present and implement a recommender system to predict user skill ratings using the collaborative filtering approach. More specifically, we'll apply the model-based approach using low-rank matrix factorization (LRMF) and two implementation variations of the stochastic gradient descent (SGD) algorithm to fit this model. The first algorithm is based on the classic SGD with multiple improvements for faster and better convergence e.g. cast the `P` and `Q` matrices of the SGD algorithm in column-major ordering to match the R's default matrix memory ordering. The second algorithm is an R-based lock-free parallel multi-core SGD variation of the first featuring a speed up of roughly 2x with comparable high quality out-of-sample RMSE result and with potential for higher speed ups. However, we first navigate through a simpler baseline model implementation based on isolating the different biases or effects and there we'll outline some interesting findings.
 \
 
-What used to be just an intuitive feeling was happily confirmed by the model employed in this project as it predicted the author's rating on `tableau` to be well above average. What's the moral of the story? hiring personnel shouldn't be too hasty rejecting candidates whose skills don't match the job skills requirements verbatim but instead consult a Machine Learning model like the one we built in this project.
+What used to be just an intuitive feeling was confirmed by the model employed in this project as it predicted the author's rating on `tableau` to be well above average. What's the moral of the story? hiring personnel could be made more efficient by broadening a search through related skills which don't readily match the job requirements by consulting a Machine Learning model like the one we built in this project.
 \
 
-This last analysis enables us to answer many practical questions too e.g. 
+This last analysis enables us to answer many practical questions too, for example:
 
-* As a programmer: given my current skill ratings, in what technologies am I predicted to perform way above average?
+* As a programmer: given my current skill ratings, in what technologies am I predicted to perform above average?
 * As a company: Can we reorganize and optimize our skills distribution per department without firing / hiring anyone?
 * As a recruitment company: candidate X doesn't explicitly list required skill Y in her CV, however our model predicted her to be a perfect match for that job.
 
@@ -391,7 +391,7 @@ local({
 })
 ```
 
-We notice that only 1.75% of the users are participative. The vast majority of users only seem to create a handful of posts and use the site in "read-only" mode i.e. not making any posts. Read-only users are not interesting for the different analyses and were therefore excluded.
+We notice that only 1.75% of the users are participative. The vast majority of users only seem to create a handful of posts and use the site in "read-only" mode i.e. not making any posts. Read-only users are not interesting for the different analyses because although they contribute to voting, we consider the lack of quality questions and answers to be equivalent to `NA`s and they were therefore excluded.
 
 ## Data exploration and visualization
 
@@ -434,7 +434,7 @@ prettyPrint(head(glimpse(tags)), latex_options = c("striped"))
 
 ### Quick exploration
 
-Let's explore some interesting facts from the data we have, the top ranking question, answer, user, tags (i.e. skills) and the top ten gold badges. The top ranking answer applies to the top ranking question and they relate to `c++`, `performance` and code `optimization`. By looking at the top ten gold badges it shows that being awarded with a "Great Question"^[See https://stackoverflow.com/help/badges/22/great-question] is harder than for a "Great Answer"^[See https://stackoverflow.com/help/badges/25/great-answer], it would seem from this result that users tend to up vote more answers than questions:
+Let's explore some interesting facts from the data we have, that's the top ranking question, answer, user, tags (i.e. skills) and the top ten gold badges. The top ranking answer applies to the top ranking question and they relate to `c++`, `performance` and code `optimization`. By looking at the top ten gold badges it shows that being awarded with a "Great Question"^[See https://stackoverflow.com/help/badges/22/great-question] is harder than for a "Great Answer"^[See https://stackoverflow.com/help/badges/25/great-answer], it would seem from this result that users tend to up vote more answers than questions:
 ```{r exploration-basic,echo=TRUE,message=TRUE}
 # what's the question with highest score?
 prettyPrint(
@@ -520,7 +520,7 @@ prettyPrint(
 , latex_options = c("striped"))
 ```
 
-In the following listing we apply the `log10` transformation^[We preferred to work with the `log10` for reputation because it's a nicer scale, an order-invariant transformation, and easier to interpret than natural `log`.] to the users reputation and plot its histogram, the plot confirms that the users reputation is positively skewed. Remember that we set the user selection criteria to be: users with reputation greater than 999 or located in Switzerland, so there we have some of the users located in Switzerland to the left of $\text{log10}(999) \approx 3$ and we exclude them first:
+In the following listing we apply the `log10` transformation^[We preferred to work with the `log10` for reputation because it's an order-invariant transformation, and easier to interpret than natural `log`.] to the users reputation and plot its histogram, the plot confirms that the users reputation is positively skewed. Remember that we set the user selection criteria to be: users with reputation greater than 999 or located in Switzerland, so there we have some of the users located in Switzerland to the left of $\text{log10}(999) \approx 3$ and we exclude them first:
 ```{r histogram-reputation,echo=TRUE,message=TRUE,fig.cap="Histogram of users reputation"}
 users %>%
   filter(reputation > 999) %>%
@@ -559,7 +559,7 @@ users %>%
 
 ### The What: skills and technology trends
 
-In the following listing we want to find the main technology trends and how skills group together. To this end we first select the top 2k skills by frequency of tagging, compute their pair-wise co-occurrence matrix and run PCA on it.
+In the following listing we want to find the main technology trends and how skills group together. To this end we first select the top 2000 skills by frequency of tagging, compute their pair-wise co-occurrence matrix and run PCA on it.
 ```{r the-what-co-occurrence-pca,echo=TRUE,message=FALSE}
 # select the top 2k tags/skills by count
 mainSkills <- tags %>% 
@@ -603,7 +603,7 @@ sum(X == 0)/(dim(X)[1]^2)
 pca <- prcomp(X)
 ```
 
-At this point we can plot the cumulative variability explained up to each principal component. We see that the first four components explain 50% of the variance:
+Figure \@ref(fig:the-what-pca-variability) depicts the cumulative variability explained up to each principal component. We see that the first four components explain 50% of the variance, and only the first 30 components are required to explain ~95% of the variance:
 ```{r the-what-pca-variability,echo=TRUE,message=FALSE,fig.cap="Variance explained up to each principal component"}
 # let's consider the first 50 components only 
 pc <- 1:50
@@ -839,7 +839,7 @@ if (!file.exists(filePathForObjectName("SwissMap"))) {
 map <- readObjectByName("SwissMap")
 ```
 
-Figure \ref(fig:the-where-visualization) depicts the technology trends discovered in the previous analysis and now shown in geographical context for Switzerland. We note that Zurich is becoming a true technology center in Europe as all the trends are there. The most prominent data point by score in Switzerland was reached by an user located in Zurich posting on Full Stack development. We can also see that the east and south of Switzerland e.g. the Tessin region has much lower activity technology-wise therefore it wound't be a wise decision looking for technology jobs there. The data points appearing in the center of Switzerland correspond to users who were not precise in providing their specific location i.e. they specified their location as "Switzerland" and that's the center of Switzerland but technology-wise we should not expect to find anything in the middle of the mountains. Geneve city was surprisingly less active in quantity and quality or may be that users there didn't provide their location precisely enough. The city of Bern shows two high scoring data points connected to the technology trends Microsoft Stack and Python & C++ respectively. We can also note several users in isolated Swiss regions working on `ios` i.e. potentially building iPhone applications in remote areas which would make sense.
+Figure \@ref(fig:the-where-visualization) depicts the technology trends discovered in the previous analysis and now shown in geographical context for Switzerland. We note that Zurich is becoming a true technology center in Europe as all the trends are there. The most prominent data point by score in Switzerland was reached by an user located in Zurich posting on Full Stack development. We can also see that the east and south of Switzerland e.g. the Tessin region has much lower activity technology-wise therefore it wound't be a wise decision looking for technology jobs there. The data points appearing in the center of Switzerland correspond to users who were not precise in providing their specific location i.e. they specified their location as "Switzerland" and that's the center of Switzerland but technology-wise we should not expect to find anything in the middle of the mountains. Geneve city was surprisingly less active in quantity and quality or may be that users there didn't provide their location precisely enough. The city of Bern shows two high scoring data points connected to the technology trends Microsoft Stack and Python & C++ respectively. We can also note several users in isolated Swiss regions working on `ios` i.e. potentially building iPhone applications in remote areas which would make sense.
 ```{r the-where-visualization, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=FALSE,fig.cap="Users located in Switzerland and their matching technology trends, weighted by score"}
 # plot the top technology trends in Geo-context in Switzerland
 ggmap(map) + 
@@ -943,7 +943,7 @@ comp <- comp %>%
   mutate(badge = factor(badge, levels=badgesOrder))
 ```
 
-Here we take a look at the average reputations for users who have been granted the different badges of interest. The result gives us a rough idea of the order we are after. Recall that we've observed in Figure \ref(fig:histogram-reputation) the users reputation to be highly skewed so we choose to work with the median as measure of central tendency instead of the mean. The result reveals that users granted with answer badges depict in average higher reputations than those granted question badges. We also note that users granted gold badges depict higher average reputation than that of users granted silver badges, similarly users granted silver badges tend to have higher reputations in average than users granted bronze badges.
+Here we take a look at the average reputations for users who have been granted the different badges of interest. The result gives us a rough idea of the order we are after. Recall that we've observed in Figure \@ref(fig:histogram-reputation) the users reputation to be highly skewed so we choose to work with the median as measure of central tendency instead of the mean. The result reveals that users granted with answer badges depict in average higher reputations than those granted question badges. We also note that users granted gold badges depict higher average reputation than that of users granted silver badges, similarly users granted silver badges tend to have higher reputations in average than users granted bronze badges.
 ```{r badges-significance-avg, echo=TRUE, message=TRUE} 
 # checkout the average reputation ordering by badge to get an idea though
 # this is not the exact final ordering used due to the exclusion system.
@@ -960,7 +960,7 @@ prettyPrint(
 Note that since the `log` transformation preserves the order of the data i.e. if $x > y$ then $\text{log}(x) > \text{log}(y)$ and brings it to a nicer scale to work (e.g. for plotting) we're going to do conduct the following inference analysis using a `log10` transformation of the users reputation.
 \
 
-Figure \ref(fig:badges-significance-answers-plot) reveals the user reputation ordering difference between gold, silver and bronze for answer badges. We see that the average within each group matches the expected level of the class i.e. users granted gold answer badges depict higher reputation average than those granted with silver and bronze answer badges. The vertical dashed lines show the median for each class:
+Figure \@ref(fig:badges-significance-answers-plot) reveals the user reputation ordering difference between gold, silver and bronze for answer badges. We see that the average within each group matches the expected level of the class i.e. users granted gold answer badges depict higher reputation average than those granted with silver and bronze answer badges. The vertical dashed lines show the median for each class:
 ```{r badges-significance-answers-plot, echo=TRUE, message=TRUE, fig.cap="Histograms of users reputation per Answer badges"}
 # create color specification for the different badges
 colorSpec <- c("#f9a602", "#c0c0c0", "#cd7f32")
@@ -984,12 +984,12 @@ comp %>%
 The results depicted above are in a way incomplete. In order to assign skill ratings to users we need to also exclude users that were previously rated on those skills i.e. there should be no duplicate and ambiguous rating for the same user and skill. But how do we choose the rating among all possible? We can agree on the following strategy: an user reaching a higher rating level with respect to a skill, such higher rating takes precedence over other possible ratings on that skill. That's it, an user is rated with the highest rating we have observed among all posts that relate to that skill. Therefore, we find the users in the highest badge and class level for a skill and assign the highest rating e.g. 5.0. Then, excluding those users that were already rated in those skills, we find the users in the next highest level for that skill and assign the second highest rating e.g. 4.5 and so on. Therefore, we'd implement an iterative exclusion process that grants user with ratings from 5.0 to 1.5 in steps of 0.5 i.e. `seq(5.0, 1.5, by=-0.5)`. 
 \
 
-We'd like to assses the significance of the difference in average reputation between the groups created using this exclusion process. To that end, we run the exclusion process starting with the average order suggested by the listing above. We then randomly sample N users per group, for instance, `N=1500` and compare their medians. Our final ordering is the one that depicts the reputation average and distribution of the random samples per group monotonically decreasing. We'd like to also do  statistical inference i.e. build confidence intervals to compare the averages per group. In order to compare the reputation medians among the different groups, we construct 95% confidence limits using the nonparametric bias-corrected and accelerated bootstrap interval $BC_a$, a statistically robust algorithm for producing highly accurate confidence limits from a boostrap distribution see [@diciccio1996] and [@davison1997]. Note that the in-group distributions strongly depart from normality and, even though our samples are chosen randomly and we could resort to the Central Limit Theorem (CLT)^[See the https://en.wikipedia.org/wiki/Central_limit_theorem] we believe that the nonparametric $BC_a$ approach is more adequate since no assumptions are required regarding the underlying distribution of the data.
+We'd like to assses the significance of the difference in average reputation between the groups created using this exclusion process. To that end, we run the exclusion process starting with the average order suggested by the listing above. We then randomly sample N users per group, for instance, `N=1500` and compare their medians. Our final ordering is the one that depicts the reputation average and distribution of the random samples per group monotonically decreasing. We'd also like to use statistical inference to find whether there is significant difference in the user reputation population medians between these groups. However, we've observed before the in-group distributions' strong departure from normality in Figures \@ref(fig:histogram-reputation) and \@ref(fig:histogram-reputation-facet). Therefore, we construct 95% confidence limits using the non-parametric bias-corrected and accelerated bootstrap interval $BC_a$, a statistically robust algorithm for producing highly accurate confidence limits from a boostrap distribution see [@diciccio1996] and [@davison1997]. Although our samples are chosen randomly and we could resort to the Central Limit Theorem (CLT)^[See the https://en.wikipedia.org/wiki/Central_limit_theorem] we believe that the non-parametric $BC_a$ approach is more adequate and precise since no assumptions are required regarding the underlying distribution of the data.
 \
 
 The following listing compares the median of the reputation for the independent groups using the $BC_a$ bootstrap method. We required extending `ggplot2` with custom notches (a confidence interval feature for boxplots) computed using the $BC_a$ method^[See the question https://stackoverflow.com/questions/59504775/]. The boxplots are also enriched with the mean statistic (the solid circle shape) and dashed lines through the median for each group. With the guiding help of the dashed lines we observe that no confidence interval notches overlap and therefore the median reputation for each group can be assumed to be significantly different, higher (i.e. better) or lower than the others. A non-official Stack Overflow badge was introduced with name "Other Answers" to account for answers with scores below the levels that are officially awarded by Stack Overflow but still relevant to our ratings because answers, despite lower in score, still carry more weight than some questions: 
 ```{r badges-significance-boot-prep, echo=FALSE, message=FALSE}
-# bootstrap the median using 2x replications for the 1.5k users
+# bootstrap the median using 2x replications for the 1500 users
 B <- 2*N
 
 # extend ggplot with a new boxplot stat_summary function to use bootstrapped BCa 
@@ -1020,7 +1020,7 @@ summaryRep <- comp %>%
 
 ```
 
-```{r badges-significance-plot, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Reputation for random samples of 1.5k users in each badge \\& class combination"}
+```{r badges-significance-plot, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Reputation for random samples of 1500 users in each badge \\& class combination"}
 # set the seed again (we need it here to get predictable bootstrap results)
 portable.set.seed(1)
 # plot the badge & class combinations to match an ordering for the ratings
@@ -1040,7 +1040,7 @@ comp %>%
   geom_jitter(alpha=0.05)
 ```
 
-No other ordering of badges and class levels produces the monotonically decreasing median and mean reputation distribution for the users depicted in Figure \ref(fig:badges-significance-plot). However, visually comparing the confidence intervals for possible overlap is a necessary condition but often not a sufficient condition of significance. Therefore, we run the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for independent samples to determine the significance of the difference in population median between unpaired groups. The Wilcoxon test is nonparametric, and thus doesn't require the normality assumption of the data which is exactly our scenario. The following listing executes the Wilcoxon test on all badges pair-wise. The listing produces no output which confirms what we observed in Figure \ref(fig:badges-significance-plot), namely, that the averages between these groups are pair-wise significatively different:
+No other ordering of badges and class levels produces the monotonically decreasing median and mean reputation distribution for the users depicted in Figure \@ref(fig:badges-significance-plot). However, visually comparing the confidence intervals for possible overlap is a necessary condition but often not a sufficient condition of significance. Therefore, we run the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for independent samples to determine the significance of the difference in population median between unpaired groups. The Wilcoxon test is non-parametric, and thus doesn't require the normality assumption of the data which is exactly our scenario. The following listing executes the Wilcoxon test on all badges pair-wise. The listing produces no output which confirms what we observed in Figure \@ref(fig:badges-significance-plot), namely, that the averages between these groups are pair-wise significatively different:
 ```{r badges-significance-wilcoxon, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE}
 # generate all possible pair-wise badges combinations
 c <- combn(badgesOrder, m=2)
@@ -1062,7 +1062,7 @@ for (i in 1:ncol(c)) {
 }
 ```
 
-The final ordering is summarized in the following Table \ref(tab:badges-ratings-assignment)^[For more information on the Stack Overflow badges see https://stackoverflow.com/help/badges]. Note that we filter the last three rating levels "Other Questions" by `viewCount` being greater than 2.5k views, and thus we only consider question that have attracted certain level of interest:
+The final ordering is summarized in the following Table \@ref(tab:badges-ratings-assignment)^[For more information on the Stack Overflow badges see https://stackoverflow.com/help/badges]. Note that we filter the last three rating levels "Other Questions" by `viewCount` being greater than 2.5k views, and thus we only consider question that have attracted certain level of interest:
 ```{r badges-ratings-assignment}
 local({
   tbl <- data.frame(
@@ -1148,10 +1148,10 @@ local({
   #   select(Badge, Class, Rating, Conditions)
   # kable(tbl, "latex", escape = F, booktabs = T) %>% 
   
-  kable(tbl, "latex", booktabs = T) %>% 
+  kable(tbl, "latex", caption = "Rating assignments per badge and class", booktabs = T) %>% 
     kable_styling(bootstrap_options = c("hover", "condensed"), full_width = T) %>% 
     column_spec(1, width = "3cm") %>% 
-    column_spec(4, width = "9cm") %>% 
+    column_spec(4, width = "9.5cm") %>% 
     row_spec(0, bold = T)
 })
 ```
@@ -1205,7 +1205,7 @@ summaryRep <- comp %>%
             median=median(reputation))
 ```
 
-At this point we're ready to assess whether the user reputation average differences are significant per rating group. We take N random samples from each rating group and again use the $BC_a$ method to construct 95% confidence limits. Figure \ref(fig:ratings-sig-comp) shows that several rating groups do not seem to be significatively different; namely, the $BC_a$ confidence limit notches clearly overlap for ratings 3, 3.5, 4, and 4.5:
+At this point we're ready to assess whether the user reputation average differences are significant per rating group. We take N random samples from each rating group and again use the $BC_a$ method to construct 95% confidence limits. Figure \@ref(fig:ratings-sig-comp) shows that several rating groups do not seem to be significatively different; namely, the $BC_a$ confidence limit notches clearly overlap for ratings 3, 3.5, 4, and 4.5:
 ```{r ratings-sig-comp, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Boxplot of the users reputation per class \\& badge"}
 # set the seed again
 portable.set.seed(1)
@@ -1224,7 +1224,7 @@ comp %>%
   geom_jitter(alpha=0.1)
 ```
 
-We again use the Wilcoxon test to compare the average of the different groups. The results reveal that the reputation median differences for the rating group pairs `3.5-4.0` and `4.0-4.5` aren't significant, whereas all other rating pairs are at 95% confidence level. However, we note that the average difference for pair `3.5-4.5` is significant at 94% confidence level:
+We again use the Wilcoxon test to compare the average of the different groups. The results reveal that the reputation median differences for the rating group pairs `3.5-4.0`, `3.5-4.5` and `4.0-4.5` aren't significant at 95% confidence level, whereas all other rating pairs are:
 ```{r ratings-sig-wilcoxon, echo=TRUE, message=TRUE}
 # generate all possible pair-wise rating combinations
 c <- combn(seq(1.5, 5.0, by=0.5), m=2)
@@ -1249,7 +1249,7 @@ for (i in 1:ncol(c)) {
 In this section we'll build a recommender system for predicting user skill ratings using the collaborative filtering (CF) technique. We'll explore a simpler baseline method that discounts multiple effects or bias `b`'s and then move to the more advanced low-rank matrix factorization (LRMF) method implemented using the stochastic gradient descent (SGD) algorithm. The loss function we'll employ to evaluate the predictions in both cases is the root mean squared error (RMSE) where $r_{i,j}$ is the true rating and $\hat{r_{i,j}}$ is our predicted user skill rating for user $i$ and skill $j$, we'll reuse the `Metrics::rmse(...)` implementation:
 
 $$
-\text{RMSE} = \sqrt{\frac{1}{N} \sum_{i,j} (\hat{r}_{i,j} - r_{i,j})}
+\text{RMSE} = \sqrt{\frac{1}{N} \sum_{i,j} (\hat{r}_{i,j} - r_{i,j})^2}
 $$
 Let's get some basic information about the `ratings` dataset e.g. sparsity. We have 199.8k users and 2k skills^[These are the top 2k skills we have used before that account for 82.3% of the total taggings.] and a highly sparse dataset i.e. only about 1.4% of all the possible user skill ratings:
 ```{r modeling-approach-basic, echo=TRUE, message=TRUE}
@@ -1264,7 +1264,7 @@ prettyPrint(
 , latex_options = c("striped"))
 ```
 
-We start by separating the `ratings` dataset into training and test sets as shown in the following listing. We will use the train set for calibration (i.e. cross validation) and training and the test set exclusively for out-of-sample evaluation of the models:
+We start by separating the `ratings` dataset into training 90% and test 10% sets as shown in the following listing. We will use the train set for calibration (i.e. cross validation) and training and the test set exclusively for out-of-sample evaluation of the models:
 ```{r modeling-approach-split, echo=TRUE, message=TRUE}
 # split the ratings dataset into separate train and test sets
 portable.set.seed(1)
@@ -1297,10 +1297,10 @@ nrow(testSet)
 
 ## Baseline
 
-To get a benchmark and idea for what level of RMSE we can reach, we start by exploring the simpler but very effective baseline model. In our model we'll account for the ratings' gobal mean $\mu$, user effects $b_i$, skill effects $b_j$, and in addition a possible way to model temporal effects: smoothing the amount of week blocks since an user first posted about a specific skill to the time of the post rating or, put more intuitively, the elapsed time since an user started gaining experience in a skill to the time of the current rating. We call this effect the user skill experience effect $b_e$. We'll also employ regularization $\lambda$ to penalize the contribution of effects with few elements i.e. penalized least squares. Our baseline model is then specified using the following cost function:
+To get a benchmark and idea for what level of RMSE we can reach, we start by exploring the simpler but effective baseline model. In this model we'll account for the ratings' gobal mean $\mu$, user effects $b_i$, and skill effects $b_j$. We'll also employ regularization $\lambda$ (i.e. penalized least squares) which permit us to penalize large absolute value estimates that are formed from small sample sizes e.g. users with very few skill ratings. If these estimates were left untreated with regularization, they would increase uncertainty, and thus contribute to larger errors negatively impacting our RMSE. Our baseline model is then specified using the following cost function:
 
 $$
-J_{\text{baseline}} = \frac{1}{N} \sum_{i,j} (r_{i,j} - (\mu + b_i + b_j + f_{\text{smooth}}(b_e)))^2 + \lambda \left( \sum_{i}b_i^2 + \sum_{j}b_j^2 \right)
+J_{\text{baseline}} = \frac{1}{N} \sum_{i,j} (r_{i,j} - (\mu + b_i + b_j)^2 + \lambda \left( \sum_{i}b_i^2 + \sum_{j}b_j^2 \right)
 $$
 
 We start building the baseline model with just the average. Note that we're using only the training set:
@@ -1359,10 +1359,13 @@ prettyPrint(
 , latex_options = c("striped"))
 ```
 
-At this point we are in a place to account for more interesting effects. We consider the timestamp `firstPostDate` when an user made a post connected to a skill for the first time. We include this timestamp in every rating since it's an attribute that applies to every unique `userId`, `skill` combination and it's the input needed for generating the new feature: elapsed time in week blocks since the first time the user posted about the rated skill. The elapsed time in week blocks is calculated using the code `week_block_30 = ceiling(as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock)))` with the help of `lubridate` package's functions `lubridate::as.duration`^[See https://lubridate.tidyverse.org/reference/duration.html], the interval creation operator `%--%`^[See https://lubridate.tidyverse.org/reference/interval.html] and duration in weeks `lubridate::dweeks`^[See https://lubridate.tidyverse.org/reference/duration.html].
-\
+At this point we are in a place to account for more interesting effects. Let's consider adding an user-specific feature to model temporal effects: smoothing the amount of week blocks since an user first posted about a specific skill to the time of the post rating or, put more intuitively, the elapsed time since an user started gaining experience in a skill to the time of the current rating. We call this effect the user experience effect $b_e$ on a skill. We included in the `ratings` the column `firstPostDate` corresponding to the timestamp when an user made a post connected to a skill for the first time. We include this timestamp in every rating since it's an attribute that applies to every unique `userId`, `skill` combination and it's the input needed for generating the new feature. The elapsed time in week blocks is calculated using the code `week_block_30 = ceiling(as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock)))` with the help of `lubridate` package's functions `lubridate::as.duration`^[See https://lubridate.tidyverse.org/reference/duration.html], the interval creation operator `%--%`^[See https://lubridate.tidyverse.org/reference/interval.html] and duration in weeks `lubridate::dweeks`^[See https://lubridate.tidyverse.org/reference/duration.html]. Our initial baseline model is then extended as follows:
 
-Figure \ref(fig:baseline-temp-effects-plot) depicts a `loess` smoothing of the effect $b_e$ after discounting all others and illustrates how strong this gained experience temporal effect is. We note how the effect has a relatively big range and a potential impact to the RMSE of approximately 0.4. We should also note how interesting this is, from the time the user first starts looking at a skill, the effect starts increasing until it reaches a peak on approximately 2.5 times 30 week blocks i.e. approximately 1.5 years; according to our plot below this is the average experience time needed for an user to reach her peak rating for a skill. After the peak rating is reached, we notice that the experience gained effect reaches a plateau and starts to fluctuate meaning users either: continue improving that skill or move on to other skill topics or simply the skill becomes irrelevant. There could also be a changing job or projects effect involved:
+$$
+J_{\text{baseline}} = \frac{1}{N} \sum_{i,j} (r_{i,j} - (\mu + b_i + b_j + f_{\text{smooth}}(b_e)))^2 + \lambda \left( \sum_{i}b_i^2 + \sum_{j}b_j^2 \right)
+$$
+
+Figure \@ref(fig:baseline-temp-effects-plot) depicts a `loess` smoothing of the effect $b_e$ after discounting all others and illustrates how strong this gained experience temporal effect is. We note how the effect has a relatively big range and a potential impact to the RMSE of approximately 0.4. We should also note how interesting this is, from the time the user first starts looking at a skill, the effect starts increasing until it reaches a peak on approximately 2.5 times 30 week blocks i.e. approximately 1.5 years. According to Figure \@ref(fig:baseline-temp-effects-plot) this is the average experience time needed for an user to reach her peak rating for a skill. After the peak rating is reached, we notice that the experience gained effect reaches a plateau and starts to fluctuate meaning users either: continue improving that skill or move on to other skill topics or simply the skill becomes irrelevant. There could also be a changing job or projects effect involved:
 ```{r baseline-temp-effects-plot, echo=TRUE, message=TRUE, fig.cap="Smoothing function of the temporal effect gained experience"}
 # show the effects of number of week blocks since first post 
 weeksBlock <- 30
@@ -1428,21 +1431,21 @@ cat(sprintf("baseline RMSE on test data is %.9f\n", rmseValue))
 stopifnot(abs(rmseValue - 0.653410415) < 1e-9)
 ```
 
-We reached an impressive out-of-sample RMSE=`0.653410415`. Note that we haven't calibrated this baseline model properly, we've simply manually experimented with the hyper-parameters: $\lambda$, `weeksBlock`, loess `span` and `degree` and found the following best hyper-parameters combination for illustrative purposes:
+We reached an out-of-sample RMSE=`0.653410415` which is reasonable and ties in with the significance of ratings found and discussed in previous sections i.e. we can't expect a much lower RMSE when the population average reputation differences between rating groups e.g. `3.5-4.0` aren't significative. Note that we haven't calibrated this baseline model properly, we've simply manually experimented with the hyper-parameters: $\lambda$, `weeksBlock`, loess `span` and `degree` and found the following best hyper-parameters combination for illustrative purposes:
 
 * Lambda $\lambda=4$
 * `weeksBlock=30` number of week blocks between user's first exposure to the skill and the time of the rating.
 * Loess temporal model smoothing parameter `span=0.3`.
 * Loess temporal model `degree=2`.
 
-Although we find this modeling approach truly fascinating, we could keep on exploring, adding features and accounting for more interesting effects that would lower our RMSE even further^[For example, add as feature the number of user posts for a skill or the number of answers to questions ratio for a skill, etc.]; adding so many features increases model complexity and hinders usability in practice. Notice that in order to predict user skill ratings using our baseline model we require the user to inform us with the elapsed time in 30 week blocks since she first started looking at a skill, as this is a required predictor variable of our model. At this point we have a baseline, reference RMSE and we can move on to a more advanced model that only requires the past ratings, nothing else, to learn and make predictions.
+We could keep on exploring, adding features and accounting for more interesting effects that would lower our RMSE even further^[For example, the number of user posts for a skill or the number of answers to questions ratio for a skill, etc.]; adding many features increases model complexity and hinders usability in practice. Notice that in order to predict user skill ratings using our baseline model we require the user to inform us with the elapsed time in 30 week blocks since she first started looking at a skill, as this is a required predictor variable of our model. At this point we have a baseline, reference RMSE and we can move on to a more advanced model that only requires the past ratings, nothing else, to learn and make predictions.
 
 ## Low-Rank Matrix Factorization
 
-In this section we present a recommender system for predicting user skill ratings using the collaborative filtering (CF)^[https://en.wikipedia.org/wiki/Collaborative_filtering] technique. More specifically we'll implement the model-based low-rank matrix factorization (LRMF) method see [@10.1145/1401890.1401944] and [@10.1109/MC.2009.263]. The principle is that there are latent structures in the data that once revealed, we have a low-dimensional representation we can use to make automatic predictions, in this case user skill rating predictions. The low-dimensional representation we obtain using LRMF is equivalent to computing the singular value decomposition SVD^[https://en.wikipedia.org/wiki/Singular_value_decomposition] on the dense ratings matrix representation. However, this later approach is impractical and prohibitive when the dimensions of the dense representation are too large and the system is very sparse as it's in our case.
+In this section we present a recommender system for predicting user skill ratings using the collaborative filtering (CF)^[https://en.wikipedia.org/wiki/Collaborative_filtering] technique. More specifically we'll implement the model-based low-rank matrix factorization (LRMF) method see [@10.1145/1401890.1401944] and [@10.1109/MC.2009.263]. The principle is that there are latent structures in the data that once revealed, we have a low-dimensional representation we can use to make automatic predictions, in this case user skill rating predictions. The low-intrinsic dimension representation we obtain using LRMF can also be achieved by computing the singular value decomposition SVD^[https://en.wikipedia.org/wiki/Singular_value_decomposition] on the dense ratings matrix representation. However, this later approach is impractical and prohibitive when the dimensions of the dense representation are too large and the system is very sparse as in our case.
 \
 
-Our algorithm will learn and encode a low-dimensional representation of the ratings within two matrices P and Q. P is a matrix of K latent rows (or features) and N columns corresponding to each distinct user. While Q is a matrix of K latent rows and M columns corresponding to each distinct skill. Note that we have encoded the two matrices in such a way that all matrix computations are done on the columns i.e. the dimensions corresponding to users and skills. Doing so we match R's default^[See https://cran.r-project.org/web/packages/reticulate/vignettes/arrays.html] column-major^[See https://en.wikipedia.org/wiki/Row-_and_column-major_order] order to achieve the best possible performance i.e. operate on contiguous memory and avoid costly memory striding operations. Our LRMF cost function is then defined as follows:
+Our algorithm will learn and encode a low-dimensional representation of the ratings within two matrices P and Q. P is a matrix of K latent rows (or features) and N columns corresponding to each distinct user. While Q is a matrix of K latent rows and M columns corresponding to each distinct skill. Note that we have encoded the two matrices in such a way that all matrix computations are done on the columns i.e. the dimensions corresponding to users and skills. Doing so we match R's default^[See https://cran.r-project.org/web/packages/reticulate/vignettes/arrays.html] column-major^[See https://en.wikipedia.org/wiki/Row-_and_column-major_order] order to achieve the best possible performance i.e. operate on contiguous memory when possible and avoid costly memory striding operations. Our LRMF cost function is then defined as follows:
 $$
 \begin{aligned}
 J_{P,Q} = \sum_{i,j} \left(r_{u,i} - P_{i}^TQ_{j}\right)^2 + \lambda\left( \sum_{i}{\parallel P_i \parallel}^2+\sum_{j}{\parallel Q_j \parallel}^2 \right)
@@ -1996,8 +1999,8 @@ toc()
 ## The bestTune model found is:
 stopifnot(cvFit$bestTune$K == 10)
 stopifnot(cvFit$bestTune$gamma == 0.1)
-#stopifnot(cvFit$bestTune$lambda == 0.05)
-#stopifnot(cvFit$bestTune$sigma == 0.05)
+stopifnot(cvFit$bestTune$lambda == 0.03)
+stopifnot(cvFit$bestTune$sigma == 0.05)
 ```
 
 We can then train our model on all training data^[Actually we train the LRMF model on a small fraction ~0.5% of the training set.]. We train both the parallel and classic models using the exact same number of sample updates 27k (i.e. `maxIter*batchIter`) to compare them. The parallel is trained with half the `maxIter` compensated with doubling the `batchIter`.
@@ -2046,7 +2049,7 @@ rmseHist <- rmseHist %>%
               add_column(method="Classic"))
 ```
 
-In Figure \ref(fig:lrmf-convergence) reveals that the parallel implementation arrives to comparable RMSE in about half the time than the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction. This we can see in the RMSE convergence for the parallel case being more bumpy compared to the classic:
+In Figure \@ref(fig:lrmf-convergence) reveals that the parallel implementation arrives to comparable RMSE in about half the time than the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction. This we can see in the RMSE convergence for the parallel case being more bumpy compared to the classic:
 ```{r lrmf-convergence, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Convergence comparison between classic and parallel implementations"}
 # plot the convergence for the model on the full training data
 colorSpec <- c("salmon", "turquoise3")
@@ -2062,7 +2065,7 @@ rmseHist %>%
            y = rmseHist %>% 
              filter(method == sprintf("Parallel - %d cores", ncores)) %>% 
              last() %>% 
-             pull(rmse) - 0.007,
+             pull(rmse) + 0.004,
            label = sprintf("%.2f sec", elapsedPar)) + 
   annotate("text", x = 250, colour = colorSpec[1],
            y = rmseHist %>% 
@@ -2074,35 +2077,35 @@ rmseHist %>%
         legend.text=element_text(size = 12))
 ```
 
-At this point, we're ready to test our trained model in the out-of-sample test set. We reached an RMSE=`0.654579092` and RMSE=`0.635590026` for the parallel and classic respectively. Note that we didn't improve over the simpler baseline model in the out-of-sample but we arrived very close:
+At this point, we're ready to test our trained model in the out-of-sample test set. We reached an RMSE=`0.684472449` and RMSE=`0.667113795` for the parallel and classic respectively. Note that we didn't improve over the simpler baseline model in the out-of-sample but we arrived close:
 ```{r lrmf-test-rmse, echo=TRUE, message=TRUE}
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- predict(fitPar, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-#stopifnot(abs(rmseValue - 0.654579092) < 1e-9)
+stopifnot(abs(rmseValue - 0.686592201) < 1e-9)
 
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- predict(fitSeq, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-#stopifnot(abs(rmseValue - 0.635590026) < 1e-9)
+stopifnot(abs(rmseValue - 0.667113795) < 1e-9)
 ```
 
-Now we're ready to test drive our model on the author's data. A question posed in the introduction of this work was to predict the author^[See https://stackoverflow.com/users/1142881] ratings in skills for which there is no previous evidence. For example, how high would the author be rated on skill `tableau`? and whether it was a sound decision to reject the author as candidate applying for a job that had `tableau` as requirement simply because the candidate had not used that specific skill before? In order to do that let's first take a look at the skills where the author is top rated:
+Now we're ready to test drive our model on the author's data. A question posed in the introduction was to predict the author^[See https://stackoverflow.com/users/1142881] ratings in skills for which there is no previous evidence. For example, how high would the author be rated on skill `tableau`? and whether it was a sound decision to reject the author as candidate applying for a job that had `tableau` as requirement simply because the candidate had not used that specific skill before? In order to do that let's first take a look at the skills where the author is top rated:
 ```{r results-top-skills, echo=TRUE, message=TRUE}
 # where is the author top rated?
 prettyPrint(
   ratings %>% 
     filter(userId == 1142881) %>%
     top_n(20, rating) %>%
-    arrange(desc(rating))
+    arrange(desc(rating), skill)
 )
 ```
 
-Let's find the skills for which there is no previous evidence, that's it, those skills for which the author doesn't have any observed ratings. Then compute the average ratings among all users that have been rated on those skills and compute the predicted author's rating on those skills. We then output the author's predicted ratings for some interesting technologies and notice that he's predicted to be way above average for skill `tableau` confirming his initial hunch, this time using a machine learning model. Finally we output the top 20 skills where the author is predicted to rate above average and in descending predicted rating order. It could be worth following the recommendation of our model and learn those skills:
+Let's find the skills for which there is no previous evidence, that's it, those skills for which the author doesn't have any observed ratings. Then compute the average ratings for all users that have been rated on those skills and compute the predicted author's rating on those skills. We then output the author's predicted ratings for some interesting technologies and notice that he's predicted to be way above average for skill `tableau` confirming his initial hunch, this time using a machine learning model. Finally we output the top 20 skills where the author is predicted to rate above average and in descending predicted rating order. It could be worthwhile following the recommendation of our model and learn those skills:
 ```{r results-rating-predictions, echo=TRUE, message=TRUE}
 # find the skills for which there are no ratings i.e. there is no evidence
 noEvidenceSkills <- mainSkills %>%
@@ -2131,7 +2134,7 @@ newdata$predicted <- predict(fitSeq, newdata)
 # show how would be rated for the following hot technologies
 prettyPrint(
   newdata %>% 
-    filter(skill %in% c("blockchain", "haskell", "apache-kafka", 
+    filter(skill %in% c("blockchain", "haskell", "klotin", "apache-kafka", 
                         "tableau", "spring-boot", "google-maps", "c++11", 
                         "c++17", "spring-mvc", "ejb", "game-physics", 
                         "go", "java-stream", "teradata", "itext")) %>%
@@ -2155,7 +2158,7 @@ In this work we have unveiled multiple data science analysis use-cases possible 
 First we've built a fully automated R script to: download, extract, parse, clean and store the Stack Overflow data. It was already a challenge to start with since some of the extracted XML files reached 75GB in size. We applied blocking and parallel processing in this and other areas of this work.
 \
 
-We successfully applied dimensionality reduction in two different areas, first we applied PCA to the co-occurrence matrix of skills in questions and in order to identify the main technology trends occurring in the last ten years. As discussed, running this analysis in a rolling time window fashion we would discover the changes in technology trends over different periods of time. As result of this analysis we learned from the first principal component that the technologies explaining most of the variance in the data are related to blockchain, cloud computing, build, deployment tools and data visualization. Although not totally surprising it's interesting to see that blockchain seems to be applied in many different contexts. Another take away result is that cloud computing is ubiquitous. It's definitely a strong asset for any technology professional to master those.
+We successfully applied dimensionality reduction in two different areas, first we applied PCA to the co-occurrence matrix of skills in questions and in order to identify the main technology trends occurring in the last ten years. As discussed, running this analysis in a rolling time window fashion we would discover the changes in technology trends over different periods of time. As result of this analysis we learned from the first principal component that the technologies explaining most of the variance in the data are related to blockchain, cloud computing, build, deployment tools and data visualization. Although not totally surprising it's interesting to see that blockchain seems to be applied in many different contexts. Another take away result is that cloud computing is ubiquitous. It's definitely a strong asset for any technology professional to master.
 \
 
 Placing the main technology trends in geographical context for the Stack Overflow users located in Switzerland reveals that Zurich has become a technology center. We identified all the main trends there, and a high quantity and quality of Stack Overflow users posting from Zurich. Indeed most of the big technology players have been expanding to Zurich including: Google, Microsoft, Facebook, Oracle, and others. We noticed too that the south-east parts of Switzerland e.g. Tessin don't seem to be too active technology-wise at least this isn't obvious by looking at the number of Stack Overflow users posting from that location. We expected to see above average blockchain activity in Zug believed to be a cryptocurrency haven but this doesn't seem to be the case again judging by the top posts from users located in that area.
