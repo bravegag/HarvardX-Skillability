@@ -413,6 +413,9 @@ highlightLog %>%
 ## Data exploration and visualization: Geo-context
 ##########################################################################################
 
+# try to access or download it first
+UsersCH <- readObjectByName("UsersCH")
+
 # do this only if the file isn't there to avoid costly Google geomapping calls
 if (!file.exists(filePathForObjectName("UsersCH"))) {
   # the environment variable GOOGLE_API_KEY is required or simply copy-paste your
@@ -517,6 +520,9 @@ usersChTop %>% filter(userId == 1142881)
 # double-check the top scores
 usersChTop %>% 
   arrange(desc(score))
+
+# try to access or download it first
+map <- readObjectByName("SwissMap")
 
 # do this only if the file isn't there to avoid costly Google map calls
 if (!file.exists(filePathForObjectName("SwissMap"))) {
