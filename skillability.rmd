@@ -3,7 +3,7 @@ title: "Skillability"
 author: "Giovanni Azua Garcia - giovanni.azua@outlook.com"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
-  pdf_document:
+  bookdown::pdf_book:
     includes: 
       in_header: packages.sty
     df_print: kable
@@ -521,7 +521,7 @@ prettyPrint(
 ```
 
 In the following listing we apply the `log10` transformation^[We preferred to work with the `log10` for reputation because it's a nicer scale, an order-invariant transformation, and easier to interpret than natural `log`.] to the users reputation and plot its histogram, the plot confirms that the users reputation is positively skewed. Remember that we set the user selection criteria to be: users with reputation greater than 999 or located in Switzerland, so there we have some of the users located in Switzerland to the left of $\text{log10}(999) \approx 3$ and we exclude them first:
-```{r histogram-reputation,echo=TRUE,message=TRUE}
+```{r histogram-reputation,echo=TRUE,message=TRUE,fig.cap="Histogram of users reputation"}
 users %>%
   filter(reputation > 999) %>%
   mutate(reputation=log10(reputation)) %>%
@@ -534,7 +534,7 @@ users %>%
 ```
 
 Now, if we split the users per badges^[We chose only the badges relevant for our analysis see https://stackoverflow.com/help/badges] then the histograms look a bit nicer i.e. no longer so skewed but still asymmetrical and quite departed from a normal distribution:
-```{r histogram-reputation-facet, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE,message=TRUE}
+```{r histogram-reputation-facet, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE,message=TRUE,fig.cap="Histogram of users reputation per badge"}
 # histogram of the log10-transfored of users reputation per badge and 
 # excluding users with less than 999 reputation 
 users %>%
@@ -604,7 +604,7 @@ pca <- prcomp(X)
 ```
 
 At this point we can plot the cumulative variability explained up to each principal component. We see that the first four components explain 50% of the variance:
-```{r the-what-pca-variability,echo=TRUE,message=FALSE}
+```{r the-what-pca-variability,echo=TRUE,message=FALSE,fig.cap="Variance explained up to each principal component"}
 # let's consider the first 50 components only 
 pc <- 1:50
 
@@ -714,11 +714,11 @@ nonHighlightLog <- nonHighlight %>%
          PC2=sign(PC2)*log10(abs(PC2)))
 ```
 
-The following plot reveals the skill groups that explain most of the variance in the data or how we prefer to call it, the main technology trends. The top ten skills are highlighted in bold font-face. The top and bottom ends of the first principal component reveal "Blockchain, Cloud, Build and Data Visualization" (in red) and "Full Stack" (in blue) respectively. While the top and bottom ends of the second principal component reveal "Web Frontend & Mobile" (in green) and "Microsoft Stack" (in purple) respectively. Note that the technology trends were named e.g. "Microsoft Stack" after reviewing all the skills found in those segments and assigning a more general conceptual trend but the resulting groupings are not exact e.g. `c++` appears in the second component "Microsoft Stack" while the third component groups together **mostly** "Python & C++" skills e.g. `python`, `c++11`, `stl`, `boost`, `qt`, `visual-c++`, etc. 
+Figure \@ref(fig:the-what-visualization) reveals the skill groups that explain most of the variance in the data or how we prefer to call it, the main technology trends. The top ten skills are highlighted in bold font-face. The top and bottom ends of the first principal component reveal "Blockchain, Cloud, Build and Data Visualization" (in red) and "Full Stack" (in blue) respectively. While the top and bottom ends of the second principal component reveal "Web Frontend & Mobile" (in green) and "Microsoft Stack" (in purple) respectively. Note that the technology trends were named e.g. "Microsoft Stack" after reviewing all the skills found in those segments and assigning a more general conceptual trend but the resulting groupings are not exact e.g. `c++` appears in the second component "Microsoft Stack" while the third component groups together **mostly** "Python & C++" skills e.g. `python`, `c++11`, `stl`, `boost`, `qt`, `visual-c++`, etc. 
 \
 
 The grouping here is very interesting, The link between cloud and build tools is clear, since most of the cloud technologies are related to and require building and deploying software. Furthermore, it would seem that blockchain software is linked to deploying software in the cloud; likewise there seems to be a link between software deployment, cloud technologies, generating reports and data visualization.
-```{r the-what-visualization,echo=TRUE,message=FALSE} 
+```{r the-what-visualization,echo=TRUE,message=FALSE,fig.cap="Top skills in each direction of the first two Principal Components PC1 and PC2"} 
 portable.set.seed(1)
 highlightLog %>% 
   filter(pc %in% c(1, 2)) %>%
@@ -839,8 +839,8 @@ if (!file.exists(filePathForObjectName("SwissMap"))) {
 map <- readObjectByName("SwissMap")
 ```
 
-The following plot depicts the technology trends discovered in the previous analysis and now shown in geographical context for Switzerland. We note that Zurich is becoming a true technology center in Europe as all the trends are there. The most prominent data point by score in Switzerland was reached by an user located in Zurich posting on Full Stack development. We can also see that the east and south of Switzerland e.g. the Tessin region has much lower activity technology-wise therefore it wound't be a wise decision looking for technology jobs there. The data points appearing in the center of Switzerland correspond to users who were not precise in providing their specific location i.e. they specified their location as "Switzerland" and that's the center of Switzerland but technology-wise we should not expect to find anything in the middle of the mountains. Geneve city was surprisingly less active in quantity and quality or may be that users there didn't provide their location precisely enough. The city of Bern shows two high scoring data points connected to the technology trends Microsoft Stack and Python & C++ respectively. We can also note several users in isolated Swiss regions working on `ios` i.e. potentially building iPhone applications in remote areas which would make sense.
-```{r the-where-visualization, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=FALSE}
+Figure \ref(fig:the-where-visualization) depicts the technology trends discovered in the previous analysis and now shown in geographical context for Switzerland. We note that Zurich is becoming a true technology center in Europe as all the trends are there. The most prominent data point by score in Switzerland was reached by an user located in Zurich posting on Full Stack development. We can also see that the east and south of Switzerland e.g. the Tessin region has much lower activity technology-wise therefore it wound't be a wise decision looking for technology jobs there. The data points appearing in the center of Switzerland correspond to users who were not precise in providing their specific location i.e. they specified their location as "Switzerland" and that's the center of Switzerland but technology-wise we should not expect to find anything in the middle of the mountains. Geneve city was surprisingly less active in quantity and quality or may be that users there didn't provide their location precisely enough. The city of Bern shows two high scoring data points connected to the technology trends Microsoft Stack and Python & C++ respectively. We can also note several users in isolated Swiss regions working on `ios` i.e. potentially building iPhone applications in remote areas which would make sense.
+```{r the-where-visualization, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=FALSE,fig.cap="Users located in Switzerland and their matching technology trends, weighted by score"}
 # plot the top technology trends in Geo-context in Switzerland
 ggmap(map) + 
   scale_colour_manual(values = colorSpec) +
@@ -943,7 +943,7 @@ comp <- comp %>%
   mutate(badge = factor(badge, levels=badgesOrder))
 ```
 
-Here we take a look at the average reputations for users who have been granted the different badges of interest. The result gives us a rough idea of the order we are after. Note that we previously saw the users reputation to be highly skewed so we choose to work with the median as measure of central tendency instead of the mean. The result reveals that users granted with answer badges depict in average higher reputations than those granted question badges. We also note that users granted gold badges depict higher average reputation than that of users granted silver badges, similarly users granted silver badges tend to have higher reputations in average than users granted bronze badges.
+Here we take a look at the average reputations for users who have been granted the different badges of interest. The result gives us a rough idea of the order we are after. Recall that we've observed in Figure \ref(fig:histogram-reputation) the users reputation to be highly skewed so we choose to work with the median as measure of central tendency instead of the mean. The result reveals that users granted with answer badges depict in average higher reputations than those granted question badges. We also note that users granted gold badges depict higher average reputation than that of users granted silver badges, similarly users granted silver badges tend to have higher reputations in average than users granted bronze badges.
 ```{r badges-significance-avg, echo=TRUE, message=TRUE} 
 # checkout the average reputation ordering by badge to get an idea though
 # this is not the exact final ordering used due to the exclusion system.
@@ -960,8 +960,8 @@ prettyPrint(
 Note that since the `log` transformation preserves the order of the data i.e. if $x > y$ then $\text{log}(x) > \text{log}(y)$ and brings it to a nicer scale to work (e.g. for plotting) we're going to do conduct the following inference analysis using a `log10` transformation of the users reputation.
 \
 
-The following plot reveals the user reputation ordering difference between gold, silver and bronze for answer badges. We see that the average within each group matches the expected level of the class i.e. users granted gold answer badges depict higher reputation average than those granted with silver and bronze answer badges. The vertical dashed lines show the median for each class:
-```{r badges-significance-answers-plot, echo=TRUE, message=TRUE}
+Figure \ref(fig:badges-significance-answers-plot) reveals the user reputation ordering difference between gold, silver and bronze for answer badges. We see that the average within each group matches the expected level of the class i.e. users granted gold answer badges depict higher reputation average than those granted with silver and bronze answer badges. The vertical dashed lines show the median for each class:
+```{r badges-significance-answers-plot, echo=TRUE, message=TRUE, fig.cap="Histograms of users reputation per Answer badges"}
 # create color specification for the different badges
 colorSpec <- c("#f9a602", "#c0c0c0", "#cd7f32")
 names(colorSpec) <- c("gold", "silver", "bronze")
@@ -988,7 +988,7 @@ We'd like to assses the significance of the difference in average reputation bet
 \
 
 The following listing compares the median of the reputation for the independent groups using the $BC_a$ bootstrap method. We required extending `ggplot2` with custom notches (a confidence interval feature for boxplots) computed using the $BC_a$ method^[See the question https://stackoverflow.com/questions/59504775/]. The boxplots are also enriched with the mean statistic (the solid circle shape) and dashed lines through the median for each group. With the guiding help of the dashed lines we observe that no confidence interval notches overlap and therefore the median reputation for each group can be assumed to be significantly different, higher (i.e. better) or lower than the others. A non-official Stack Overflow badge was introduced with name "Other Answers" to account for answers with scores below the levels that are officially awarded by Stack Overflow but still relevant to our ratings because answers, despite lower in score, still carry more weight than some questions: 
-```{r badges-significance-plot, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE}
+```{r badges-significance-boot-prep, echo=FALSE, message=FALSE}
 # bootstrap the median using 2x replications for the 1.5k users
 B <- 2*N
 
@@ -1018,6 +1018,9 @@ summaryRep <- comp %>%
   summarise(mean=mean(reputation),
             median=median(reputation))
 
+```
+
+```{r badges-significance-plot, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Reputation for random samples of 1.5k users in each badge \\& class combination"}
 # set the seed again (we need it here to get predictable bootstrap results)
 portable.set.seed(1)
 # plot the badge & class combinations to match an ordering for the ratings
@@ -1037,7 +1040,7 @@ comp %>%
   geom_jitter(alpha=0.05)
 ```
 
-No other ordering of badges and class levels produces the monotonically decreasing median and mean reputation distribution for the users depicted in the figure above. However, visually comparing the confidence intervals for possible overlap is a necessary condition but often not a sufficient condition of significance. Therefore, we run the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for independent samples to determine the significance of the difference in population median between unpaired groups. The Wilcoxon test is nonparametric, and thus doesn't require the normality assumption of the data which is exactly our scenario. The following listing executes the Wilcoxon test on all badges pair-wise. The listing produces no output which confirms what we observed in the previous plot, that the averages between these groups are pair-wise significatively different:
+No other ordering of badges and class levels produces the monotonically decreasing median and mean reputation distribution for the users depicted in Figure \ref(fig:badges-significance-plot). However, visually comparing the confidence intervals for possible overlap is a necessary condition but often not a sufficient condition of significance. Therefore, we run the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for independent samples to determine the significance of the difference in population median between unpaired groups. The Wilcoxon test is nonparametric, and thus doesn't require the normality assumption of the data which is exactly our scenario. The following listing executes the Wilcoxon test on all badges pair-wise. The listing produces no output which confirms what we observed in Figure \ref(fig:badges-significance-plot), namely, that the averages between these groups are pair-wise significatively different:
 ```{r badges-significance-wilcoxon, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE}
 # generate all possible pair-wise badges combinations
 c <- combn(badgesOrder, m=2)
@@ -1059,8 +1062,8 @@ for (i in 1:ncol(c)) {
 }
 ```
 
-The final ordering is summarized in the following table^[For more information on the Stack Overflow badges see https://stackoverflow.com/help/badges]. Note that we filter the last three rating levels "Other Questions" by `viewCount` being greater than 2.5k views, and thus we only consider question that have attracted certain level of interest:
-```{r ratings-order-table,message=TRUE}
+The final ordering is summarized in the following Table \ref(tab:badges-ratings-assignment)^[For more information on the Stack Overflow badges see https://stackoverflow.com/help/badges]. Note that we filter the last three rating levels "Other Questions" by `viewCount` being greater than 2.5k views, and thus we only consider question that have attracted certain level of interest:
+```{r badges-ratings-assignment}
 local({
   tbl <- data.frame(
     Badge = c("Populist", 
@@ -1176,7 +1179,7 @@ prettyPrint(
 ```
 
 The following histogram plot depicts the distribution of the `ratings` dataset. We see that the lowest rating is 1.5 and goes by steps of 0.5 all the way to 5.0:
-```{r ratings-rating-dist, echo=TRUE, message=TRUE}
+```{r ratings-rating-dist, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Histogram of user skill ratings dataset"}
 # checkout the ratings histogram, it's nicely bell shaped
 ratings %>% 
   ggplot(aes(rating, fill=..x..)) + geom_histogram() +
@@ -1202,8 +1205,8 @@ summaryRep <- comp %>%
             median=median(reputation))
 ```
 
-At this point we're ready to assess whether the user reputation average differences are significant per rating group. We take N random samples from each rating group and again use the $BC_a$ method to construct 95% confidence limits. We see that several rating groups do not seem to be significatively different; namely, the $BC_a$ confidence limit notches clearly overlap for ratings 3, 3.5, 4, and 4.5:
-```{r ratings-sig-comp, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE}
+At this point we're ready to assess whether the user reputation average differences are significant per rating group. We take N random samples from each rating group and again use the $BC_a$ method to construct 95% confidence limits. Figure \ref(fig:ratings-sig-comp) shows that several rating groups do not seem to be significatively different; namely, the $BC_a$ confidence limit notches clearly overlap for ratings 3, 3.5, 4, and 4.5:
+```{r ratings-sig-comp, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Boxplot of the users reputation per class \\& badge"}
 # set the seed again
 portable.set.seed(1)
 comp %>%
@@ -1359,8 +1362,8 @@ prettyPrint(
 At this point we are in a place to account for more interesting effects. We consider the timestamp `firstPostDate` when an user made a post connected to a skill for the first time. We include this timestamp in every rating since it's an attribute that applies to every unique `userId`, `skill` combination and it's the input needed for generating the new feature: elapsed time in week blocks since the first time the user posted about the rated skill. The elapsed time in week blocks is calculated using the code `week_block_30 = ceiling(as.duration(firstPostDate %--% creationDate) / dweeks(weeksBlock)))` with the help of `lubridate` package's functions `lubridate::as.duration`^[See https://lubridate.tidyverse.org/reference/duration.html], the interval creation operator `%--%`^[See https://lubridate.tidyverse.org/reference/interval.html] and duration in weeks `lubridate::dweeks`^[See https://lubridate.tidyverse.org/reference/duration.html].
 \
 
-The following plot computes the effects $b_e$ after accounting for all other previous effects and illustrates how strong this gained experience temporal effect is. We note how the effect has a relatively big range and a potential impact to the RMSE of approximately 0.4. We should also note how interesting this is, from the time the user first starts looking at a skill, the effect starts increasing until it reaches a peak on approximately 2.5 times 30 week blocks i.e. approximately 1.5 years; according to our plot below this is the average experience time needed for an user to reach her peak rating for a skill. After the peak rating is reached, we notice that the experience gained effect reaches a plateau and starts to fluctuate meaning users either: continue improving that skill or move on to other skill topics or simply the skill becomes irrelevant. There could also be a changing job or projects effect involved:
-```{r baseline-temp-effects-plot, echo=TRUE, message=TRUE}
+Figure \ref(fig:baseline-temp-effects-plot) depicts a `loess` smoothing of the effect $b_e$ after discounting all others and illustrates how strong this gained experience temporal effect is. We note how the effect has a relatively big range and a potential impact to the RMSE of approximately 0.4. We should also note how interesting this is, from the time the user first starts looking at a skill, the effect starts increasing until it reaches a peak on approximately 2.5 times 30 week blocks i.e. approximately 1.5 years; according to our plot below this is the average experience time needed for an user to reach her peak rating for a skill. After the peak rating is reached, we notice that the experience gained effect reaches a plateau and starts to fluctuate meaning users either: continue improving that skill or move on to other skill topics or simply the skill becomes irrelevant. There could also be a changing job or projects effect involved:
+```{r baseline-temp-effects-plot, echo=TRUE, message=TRUE, fig.cap="Smoothing function of the temporal effect gained experience"}
 # show the effects of number of week blocks since first post 
 weeksBlock <- 30
 # this week blocks corresponds approximately to 7 months
@@ -1422,10 +1425,10 @@ predictedRatings <- testSet %>%
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("baseline RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-#stopifnot(abs(rmseValue - 0.632744751) < 1e-9)
+stopifnot(abs(rmseValue - 0.653410415) < 1e-9)
 ```
 
-We reached an impressive out-of-sample RMSE=`0.632744751`. Note that we haven't calibrated this baseline model properly, we've simply manually experimented with the hyper-parameters: $\lambda$, `weeksBlock`, loess `span` and `degree` and found the following best hyper-parameters combination for illustrative purposes:
+We reached an impressive out-of-sample RMSE=`0.653410415`. Note that we haven't calibrated this baseline model properly, we've simply manually experimented with the hyper-parameters: $\lambda$, `weeksBlock`, loess `span` and `degree` and found the following best hyper-parameters combination for illustrative purposes:
 
 * Lambda $\lambda=4$
 * `weeksBlock=30` number of week blocks between user's first exposure to the skill and the time of the rating.
@@ -1997,8 +2000,8 @@ stopifnot(cvFit$bestTune$gamma == 0.1)
 #stopifnot(cvFit$bestTune$sigma == 0.05)
 ```
 
-We can then train our model on all training data^[Actually we train the LRMF model on a small fraction ~0.5% of the training set.]. We train both the parallel and classic models using the exact same number of sample updates 27k (i.e. `maxIter*batchIter`) to compare them. The parallel is trained with half the `maxIter` compensated with doubling the `batchIter`. We see that the parallel implementation arrives to comparable RMSE in about half the time than the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction and this is confirmed in the convergence plot as we see it's RMSE more bumpy compared to the classic:
-```{r lrmf-train-all, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE}
+We can then train our model on all training data^[Actually we train the LRMF model on a small fraction ~0.5% of the training set.]. We train both the parallel and classic models using the exact same number of sample updates 27k (i.e. `maxIter*batchIter`) to compare them. The parallel is trained with half the `maxIter` compensated with doubling the `batchIter`.
+```{r lrmf-train-all, echo=TRUE, message=TRUE}
 tic('training LRMF on the full training set - parallel')
 # set the seed again
 portable.set.seed(1)
@@ -2041,7 +2044,10 @@ elapsedSeq <- ticTocTimes$toc[[1]] - ticTocTimes$tic[[1]]
 rmseHist <- rmseHist %>%
   bind_rows(fitSeq$finalModel$rmseHist %>% 
               add_column(method="Classic"))
+```
 
+In Figure \ref(fig:lrmf-convergence) reveals that the parallel implementation arrives to comparable RMSE in about half the time than the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction. This we can see in the RMSE convergence for the parallel case being more bumpy compared to the classic:
+```{r lrmf-convergence, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Convergence comparison between classic and parallel implementations"}
 # plot the convergence for the model on the full training data
 colorSpec <- c("salmon", "turquoise3")
 names(colorSpec) <- c("Classic", sprintf("Parallel - %d cores", ncores))

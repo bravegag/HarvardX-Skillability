@@ -530,7 +530,7 @@ ggmap(map) +
   scale_colour_manual(values = colorSpec) +
   geom_point(data=usersChTop, aes(x=lon, y=lat, colour=Technology, size=score), 
              position = position_jitterdodge(jitter.width=0.01, jitter.height=0.01, seed=1)) +
-  ggtitle("Swiss users and their technology groups, weighted by score") +
+  ggtitle("SO Users located in Switzerland and their matching technology trends, weighted by score") +
   theme(plot.title = element_text(hjust = 0.5), legend.text=element_text(size=12))
 
 # reveal the details of the top ten most prominent data points
@@ -680,7 +680,7 @@ portable.set.seed(1)
 comp %>% 
   left_join(summaryRep, by=c("class", "badge")) %>%
   ggplot(aes(x=badge, y=reputation, colour=class, group=badge)) +
-  ggtitle("Top 1.5k unique users in each badge & class combination") +
+  ggtitle("Reputation for random samples of 1.5k users in each badge & class combination") +
   ylab(label = "log10 reputation") +
   theme(legend.position="bottom", plot.title = element_text(hjust = 0.5),
         legend.text=element_text(size=12), 
@@ -914,7 +914,7 @@ predictedRatings <- testSet %>%
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("baseline RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.632744751) < 1e-9)
+stopifnot(abs(rmseValue - 0.653410415) < 1e-9)
 
 ##########################################################################################
 ## Create the CF Low-Rank Matrix Factorization (lrmf) model integrated with the caret 
@@ -947,8 +947,8 @@ lrmf$parameters <- data.frame(parameter = c("K", "maxGamma", "lambda", "sigma"),
 lrmf$grid <- function(x, y, len = NULL, search = "grid") {
   K <- 10
   maxGamma <- c(0.02, 0.1)
-  lambda <- c(0.003, 0.005, 0.01, 0.03, 0.05)
-  sigma <- c(0.05, 0.1)
+  lambda <- c(0.003, 0.005, 0.01, 0.05)
+  sigma <- c(0.1)
   
   # to use grid search
   out <- expand.grid(K = K,
@@ -1291,7 +1291,7 @@ toc()
 stopifnot(cvFit$bestTune$K == 10)
 stopifnot(cvFit$bestTune$gamma == 0.1)
 stopifnot(cvFit$bestTune$lambda == 0.05)
-stopifnot(cvFit$bestTune$sigma == 0.05)
+stopifnot(cvFit$bestTune$sigma == 0.1)
 
 ##########################################################################################
 ## Fit the best model found to the complete training set.
@@ -1354,7 +1354,7 @@ rmseHist %>%
            y = rmseHist %>% 
              filter(method == sprintf("Parallel - %d cores", ncores)) %>% 
              last() %>% 
-             pull(rmse) - 0.007,
+             pull(rmse) - 0.005,
            label = sprintf("%.2f sec", elapsedPar)) + 
   annotate("text", x = 250, colour = colorSpec[1],
            y = rmseHist %>% 
@@ -1373,19 +1373,19 @@ predictedRatings <- predict(fitPar, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.653841435) < 1e-9)
+stopifnot(abs(rmseValue - 0.670961163) < 1e-9)
 
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- predict(fitSeq, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.635590026) < 1e-9)
+stopifnot(abs(rmseValue - 0.654893823) < 1e-9)
 
 # using only ~0.5% of the ratings data
 percData <- 100*(125*216)/nrow(ratings)
 percData
-stopifnot(abs(percData - 0.4960571) < 1e-7)
+stopifnot(abs(percData - 0.4960501) < 1e-7)
 
 ##########################################################################################
 ## Finally predict how good I'd be predicted to be on skills for which there is no evidence.
@@ -1419,12 +1419,10 @@ newdata <- noEvidenceSkills %>%
 # compute skill rating predictions
 newdata$predicted <- predict(fitSeq, newdata)
 
-# show how would be rated for the following hot technologies
+# show how would be rated for the following technologies
 newdata %>% 
-  filter(skill %in% c("blockchain", "haskell", "apache-kafka", 
-                      "tableau", "spring-boot", "google-maps", "c++11", 
-                      "c++17", "spring-mvc", "qt5", "ejb", "game-physics", 
-                      "go", "java-stream", "teradata", "itext")) %>%
+  filter(skill %in% c("tableau", "google-maps", "c++11", "c++17", 
+                      "ejb", "java-stream", "teradata", "itext")) %>%
   arrange(desc(predicted))
 
 # show the top 20 skills where the predicted rating is above average
