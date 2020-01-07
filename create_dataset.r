@@ -625,44 +625,57 @@ mean(ratings$rating)
 
 # users rated as 5.0 in those skills:
 # - have achieved gold Great Answer badge on questions requiring those skills
-ratings <- bind_rows(ratings, 
-                     parBlockSeparate('gold Great Answer to %.1f', badges %>% 
-                                        filter(class == "gold" & badge == "Great Answer") %>% 
-                                        inner_join(answers %>% filter(score >= 100), by="userId") %>%
-                                        inner_join(questions %>% select(questionId, tags), by="questionId"), 
-                                      rating = 5.0, mainSkills = mainSkills, ncores = ncores, antit = ratings))
+results <- parBlockSeparate('gold Great Answer to %.1f', badges %>% 
+                              filter(class == "gold" & badge == "Great Answer") %>% 
+                              inner_join(answers %>% filter(score >= 100), by="userId") %>%
+                              inner_join(questions %>% select(questionId, tags), by="questionId"), 
+                            rating = 5.0, mainSkills = mainSkills, ncores = ncores, antit = ratings)
 # ensure we detect correctly only answer post types
-stopifnot(ratings %>% select(postType) %>% unique() %>% count() == 1)
-stopifnot(ratings %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
+stopifnot(results %>% select(postType) %>% unique() %>% count() == 1)
+stopifnot(results %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
+ratings <- bind_rows(ratings, results)
+nrow(ratings)
+mean(ratings$rating)
+
+# users rated as 4.5 in those skills:
+# - have achieved a gold Great Question badge on questions requiring those skills
+results <- parBlockSeparate('gold Great Question %.1f', badges %>% 
+                              filter(class == "gold" & badge == "Great Question") %>%
+                              inner_join(questions %>% filter(score >= 100), by="userId"), 
+                            rating = 4.5, mainSkills = mainSkills, ncores = ncores, antit = ratings)
+# ensure we detect correctly only question post types
+stopifnot(results %>% select(postType) %>% unique() %>% count() == 1)
+stopifnot(results %>% select(postType) %>% unique() %>% pull(postType) == 'question')
+ratings <- bind_rows(ratings, results)
 nrow(ratings)
 mean(ratings$rating)
 
 # users rated as 4.5 in those skills:
 # - have achieved silver Guru badge on answers requiring those skills
-ratings <- bind_rows(ratings, 
-                     parBlockSeparate('silver Guru Answer %.1f', badges %>% 
-                                        filter(class == "silver" & badge == "Guru") %>%
-                                        inner_join(answers %>% filter(40 <= score & score < 100), by="userId") %>%
-                                        inner_join(questions %>% select(questionId, acceptedAnswerId, tags), by="questionId") %>%
-                                        filter(answerId == acceptedAnswerId), 
-                                      rating = 4.5, mainSkills = mainSkills, ncores = ncores, antit = ratings))
+results <- parBlockSeparate('silver Guru Answer %.1f', badges %>% 
+                              filter(class == "silver" & badge == "Guru") %>%
+                              inner_join(answers %>% filter(40 <= score & score < 100), by="userId") %>%
+                              inner_join(questions %>% select(questionId, acceptedAnswerId, tags), by="questionId") %>%
+                              filter(answerId == acceptedAnswerId), 
+                            rating = 4.5, mainSkills = mainSkills, ncores = ncores, antit = ratings)
 # ensure we detect correctly only answer post types
-stopifnot(ratings %>% select(postType) %>% unique() %>% count() == 1)
-stopifnot(ratings %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
+stopifnot(results %>% select(postType) %>% unique() %>% count() == 1)
+stopifnot(results %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
+ratings <- bind_rows(ratings, results)
 nrow(ratings)
 mean(ratings$rating)
 
 # users rated as 4.5 in those skills:
 # - have achieved silver Good Answer badge on questions requiring those skills
-ratings <- bind_rows(ratings, 
-                     parBlockSeparate('silver Good Answer %.1f', badges %>% 
-                                        filter(class == "silver" & badge == "Good Answer") %>%
-                                        inner_join(answers %>% filter(25 <= score & score < 100), by="userId") %>%
-                                        inner_join(questions %>% select(questionId, tags), by="questionId"), 
-                                      rating = 4.5, mainSkills = mainSkills, ncores = ncores, antit = ratings))
+results <- parBlockSeparate('silver Good Answer %.1f', badges %>% 
+                              filter(class == "silver" & badge == "Good Answer") %>%
+                              inner_join(answers %>% filter(25 <= score & score < 100), by="userId") %>%
+                              inner_join(questions %>% select(questionId, tags), by="questionId"), 
+                            rating = 4.5, mainSkills = mainSkills, ncores = ncores, antit = ratings)
 # ensure we detect correctly only answer post types
-stopifnot(ratings %>% select(postType) %>% unique() %>% count() == 1)
-stopifnot(ratings %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
+stopifnot(results %>% select(postType) %>% unique() %>% count() == 1)
+stopifnot(results %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
+ratings <- bind_rows(ratings, results)
 nrow(ratings)
 mean(ratings$rating)
 
@@ -674,54 +687,41 @@ for (userBlock in 0:(userBlocks - 1)) {
   # users rated as 4.0 in those skills:
   # - have achieved bronze Nice Answer badge on questions requiring those skills
   cat(sprintf("processing user block %d\n", userBlock))
-  ratings <- bind_rows(ratings, 
-                       parBlockSeparate('bronze Nice Answer %.1f', badges %>% 
-                                          filter(class == "bronze" & badge == "Nice Answer" & userId %% userBlocks == userBlock) %>%
-                                          inner_join(answers %>% filter(10 <= score & score < 25), by="userId") %>%
-                                          inner_join(questions %>% select(questionId, tags), by="questionId"), 
-                                        rating = 4.0, mainSkills = mainSkills, ncores = ncores, antit = ratings))
+  results <- parBlockSeparate('bronze Nice Answer %.1f', badges %>% 
+                                filter(class == "bronze" & badge == "Nice Answer" & userId %% userBlocks == userBlock) %>%
+                                inner_join(answers %>% filter(10 <= score & score < 25), by="userId") %>%
+                                inner_join(questions %>% select(questionId, tags), by="questionId"), 
+                              rating = 4.0, mainSkills = mainSkills, ncores = ncores, antit = ratings)
   # ensure we detect correctly only answer post types
-  stopifnot(ratings %>% select(postType) %>% unique() %>% count() == 1)
-  stopifnot(ratings %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
-  nrow(ratings)
-  mean(ratings$rating)
+  stopifnot(results %>% select(postType) %>% unique() %>% count() == 1)
+  stopifnot(results %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
+  ratings <- bind_rows(ratings, results)
 }
+nrow(ratings)
+mean(ratings$rating)
 
 # users rated as 3.5 in those skills
 # - have answers with score between [5, 10)
-ratings <- bind_rows(ratings, 
-                     parBlockSeparate('answers with score between [5, 10) %.1f', answers %>%
-                                        filter(5 <= score & score < 10) %>%
-                                        inner_join(questions %>% select(questionId, tags), by="questionId"), 
-                                      rating = 3.5, mainSkills = mainSkills, ncores = ncores, antit = ratings))
+results <- parBlockSeparate('answers with score between [5, 10) %.1f', answers %>%
+                              filter(5 <= score & score < 10) %>%
+                              inner_join(questions %>% select(questionId, tags), by="questionId"), 
+                            rating = 3.5, mainSkills = mainSkills, ncores = ncores, antit = ratings)
 # ensure we detect correctly only answer post types
-stopifnot(ratings %>% select(postType) %>% unique() %>% count() == 1)
-stopifnot(ratings %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
+stopifnot(results %>% select(postType) %>% unique() %>% count() == 1)
+stopifnot(results %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
+ratings <- bind_rows(ratings, results)
 nrow(ratings)
 mean(ratings$rating)
 
 # users rated as 3.0 in those skills
 # - have answers with score between [0, 5)
-ratings <- bind_rows(ratings, 
-                     parBlockSeparate('answers with score between [0, 5) %.1f', answers %>%
-                                        filter(0 <= score & score < 5) %>%
-                                        inner_join(questions %>% select(questionId, tags), by="questionId"), 
-                                      rating = 3.0, mainSkills = mainSkills, ncores = ncores, antit = ratings))
-# ensure we detect correctly only answer post types
-stopifnot(ratings %>% select(postType) %>% unique() %>% count() == 1)
-stopifnot(ratings %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
-nrow(ratings)
-mean(ratings$rating)
-
-# users rated as 3.0 in those skills:
-# - have achieved a gold Great Question badge on questions requiring those skills
-results <- parBlockSeparate('gold Great Question %.1f', badges %>% 
-                              filter(class == "gold" & badge == "Great Question") %>%
-                              inner_join(questions %>% filter(score >= 100), by="userId"), 
+results <- parBlockSeparate('answers with score between [0, 5) %.1f', answers %>%
+                              filter(0 <= score & score < 5) %>%
+                              inner_join(questions %>% select(questionId, tags), by="questionId"), 
                             rating = 3.0, mainSkills = mainSkills, ncores = ncores, antit = ratings)
-# ensure we detect correctly only question post types
+# ensure we detect correctly only answer post types
 stopifnot(results %>% select(postType) %>% unique() %>% count() == 1)
-stopifnot(results %>% select(postType) %>% unique() %>% pull(postType) == 'question')
+stopifnot(results %>% select(postType) %>% unique() %>% pull(postType) == 'answer')
 ratings <- bind_rows(ratings, results)
 nrow(ratings)
 mean(ratings$rating)

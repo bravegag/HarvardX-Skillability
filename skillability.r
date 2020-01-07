@@ -561,7 +561,6 @@ accumulateBadges <- function(aBadge, acc=NULL, N=1500) {
                    select(userId) %>% unique(), by="userId") %>%
       mutate(class="bronze", badge=aBadge) %>%
       select(userId, class, badge, reputation) %>%
-      top_n(N, reputation) %>%
       bind_rows(acc)
         
   } else {
@@ -570,15 +569,13 @@ accumulateBadges <- function(aBadge, acc=NULL, N=1500) {
       res <- users %>% 
         inner_join(badges %>% filter(badge == aBadge) %>% 
                      select(userId, class, badge) %>% unique(), by="userId") %>%
-        select(userId, class, badge, reputation) %>%
-        top_n(N, reputation)    
+        select(userId, class, badge, reputation)
     } else {
       res <- users %>% 
         anti_join(acc %>% select(userId) %>% unique(), by="userId") %>%
         inner_join(badges %>% filter(badge == aBadge) %>% 
                      select(userId, class, badge) %>% unique(), by="userId") %>%
         select(userId, class, badge, reputation) %>%
-        top_n(N, reputation) %>%
         bind_rows(acc)
     }
   }
@@ -592,9 +589,34 @@ accumulateBadges <- function(aBadge, acc=NULL, N=1500) {
 # gold vs silver vs bronze badges.
 
 N <- 1500
-badgesOrder <- c("Populist", "Great Answer", "Guru", "Good Answer", 
-                 "Nice Answer", "Other Answers", "Great Question",  
+badgesOrder <- c("Populist", "Great Answer", "Great Question", "Guru", 
+                 "Good Answer", "Nice Answer", "Other Answers", 
                  "Good Question", "Nice Question")
+
+# accumulate all badge selections into a complete set
+for (i in 1:length(badgesOrder)) {
+  if (i == 1) {
+    comp <- accumulateBadges(badgesOrder[i])
+  } else {
+    comp <- accumulateBadges(badgesOrder[i], comp)
+  }
+}
+
+# show how many users per class and badge
+comp %>% 
+  group_by(class, badge) %>%
+  summarise(n = n())
+
+# set the seed again
+portable.set.seed(1)
+# log10 transform reputation and sort by factor ordering
+comp <- comp %>%
+  filter(reputation > 999) %>%
+  group_by(class, badge) %>%
+  sample_n(N) %>%
+  ungroup() %>%
+  mutate(reputation=log10(reputation)) %>%
+  mutate(badge = factor(badge, levels=badgesOrder)) 
 
 # checkout the average reputation ordering by badge to get an idea though
 # this is not the exact final ordering used due to the exclusion system.
@@ -605,33 +627,22 @@ users %>%
   summarise(avg_reputation=median(reputation)) %>%
   arrange(desc(avg_reputation))
 
-# accumulate all badge selections into a complete set
-for (i in 1:length(badgesOrder)) {
-  if (i == 1) {
-    comp <- accumulateBadges(badgesOrder[i])
-  } else {
-    comp <- accumulateBadges(badgesOrder[i], comp)
-  }
-}
-# log10 transform reputation and sort by factor ordering
-comp <- comp %>%
-  mutate(reputation=log10(reputation)) %>%
-  mutate(badge = factor(badge, levels=badgesOrder))
-
 # create color specification for the different badges
 colorSpec <- c("#f9a602", "#c0c0c0", "#cd7f32")
 names(colorSpec) <- c("gold", "silver", "bronze")
 
+selectedBadges <- c("Great Answer", "Good Answer", "Nice Answer")
 summaryRep <- comp %>%
   group_by(class, badge) %>%
   summarise(median=median(reputation))
 comp %>% 
-  filter(badge %in% c("Great Answer", "Good Answer", "Nice Answer")) %>%
+  filter(badge %in% selectedBadges) %>%
   ggplot(aes(reputation, colour = class, fill = class, group = badge)) +
   geom_histogram(position = "dodge", bins = 40) +
   scale_fill_manual(values = colorSpec) +
+  xlab("log10 reputation") +
   scale_colour_manual(values = colorSpec) +
-  geom_vline(data=summaryRep %>% filter(badge %in% c("Great Answer", "Good Answer", "Nice Answer")), 
+  geom_vline(data=summaryRep %>% filter(badge %in% selectedBadges), 
              aes(xintercept=median, color=class), linetype="dashed")
 
 # bootstrapping the median using 2x replications
@@ -682,6 +693,25 @@ comp %>%
              linetype = "dashed") +
   geom_jitter(alpha=0.05)
 
+# generate all possible pair-wise rating combinations
+c <- combn(badgesOrder, m=2)
+# run Wilcoxon rank sum test for independent samples i.e. significance of 
+# the difference in population median between non-normally distributed 
+# unpaired groups. Print the pairs whose p-value is greater than 0.05 i.e. 
+# the mean difference between groups is not significative at
+# 95% confidence
+for (i in 1:ncol(c)) {
+  res <- comp %>%
+    filter(badge == c[1,i] | badge == c[2,i]) %>%
+    wilcox.test(reputation~badge, data=., paired=F, conf.int=T)
+  if (res$p.value > 0.05) {
+    cat(sprintf(paste0("The median rep. for users with badge ",
+                       "'%s' and '%s' is NOT significatively ", 
+                       "diff. with p-value=%.6f\n"), 
+                c[1,i], c[2,i], res$p.value))
+  }
+}
+
 ##########################################################################################
 ## Load and explore the ratings dataset.
 ##########################################################################################
@@ -700,7 +730,8 @@ ratings %>%
 ratings %>% 
   ggplot(aes(rating, fill=..x..)) + geom_histogram() +
   scale_x_continuous(breaks = seq(1.5, 5, by=0.5)) +
-  scale_fill_gradient("Legend", low = "#E41A1C", high = "#4DAF4A")
+  scale_fill_gradient("Legend", low = "#E41A1C", high = "#4DAF4A") +
+  theme(legend.position="bottom", legend.title = element_blank())
 
 # set the seed again
 portable.set.seed(1)
@@ -712,6 +743,7 @@ comp <- ratings %>%
   sample_n(N) %>%
   ungroup()
 
+# compute data summary
 summaryRep <- comp %>%
   group_by(rating) %>%
   summarise(mean=mean(reputation),
