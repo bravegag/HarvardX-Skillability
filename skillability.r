@@ -957,8 +957,8 @@ lrmf$parameters <- data.frame(parameter = c("K", "maxGamma", "lambda", "sigma"),
 # Define the required grid function, which is used to create the tuning grid (unless the user 
 # gives the exact values of the parameters via tuneGrid)
 lrmf$grid <- function(x, y, len = NULL, search = "grid") {
-  K <- 10
-  maxGamma <- c(0.02, 0.1)
+  K <- 5:10
+  maxGamma <- c(0.05, 0.1, 0.15)
   lambda <- c(0.003, 0.005, 0.01, 0.03, 0.05)
   sigma <- c(0.05, 0.1)
   
@@ -1259,20 +1259,44 @@ lrmf$predict <- function(modelFit, newdata, preProc = NULL, submodels = NULL) {
 }
 
 ##########################################################################################
-## Build the calibration (cross validation) subset of the training set.
+## Build a representative calibration (cross validation) subset of the training set.
 ##########################################################################################
 
-tic("collecting the calibration set of 2k samples")
+N <- 240
+tic(sprintf("preparing a calibration set of %d random users", N))
 # set the seed again
 portable.set.seed(1)
+usersSel <- trainSet %>% 
+  group_by(rating) %>%
+  select(userId) %>% 
+  unique() %>% 
+  sample_n(N / 8)
+# all ratings for those users
 calibrationSet <- trainSet %>%
-  sample_n(2000)
+  semi_join(usersSel, by="userId")
 toc()
+rm(usersSel)
 
 # how many distinct skills and users in the calibration set?
-cat(sprintf("The calibration set contains %d unique skills and %d users\n", 
-            length(unique(calibrationSet$skill)), 
-            length(unique(calibrationSet$userId))))
+cat(sprintf("The calibration set contains %d rows, %d unique users and %d skills\n", 
+            nrow(calibrationSet),
+            length(unique(calibrationSet$userId)), 
+            length(unique(calibrationSet$skill))))
+
+# check the ratings distribution of the calibration set
+calibrationSet %>% 
+  group_by(rating) %>% 
+  count()
+
+calibrationSet %>% 
+  group_by(skill) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n))
+
+calibrationSet %>% 
+  group_by(userId) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n))
 
 ##########################################################################################
 ## Calibrate the "lrmf" model on the calibration set (subset of the training set). Here 
@@ -1366,13 +1390,13 @@ rmseHist %>%
            y = rmseHist %>% 
              filter(method == sprintf("Parallel - %d cores", ncores)) %>% 
              last() %>% 
-             pull(rmse) - 0.005,
+             pull(rmse) - 0.002,
            label = sprintf("%.2f sec", elapsedPar)) + 
   annotate("text", x = 250, colour = colorSpec[1],
            y = rmseHist %>% 
              filter(method == "Classic") %>% 
              last() %>% 
-             pull(rmse) - 0.004, 
+             pull(rmse) - 0.002, 
            label = sprintf("%.2f sec", elapsedSeq)) + 
   ggtitle("Users-skills rating prediction using LRMF - Parallel vs. classic method")
 
@@ -1385,14 +1409,14 @@ predictedRatings <- predict(fitPar, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.670961163) < 1e-9)
+stopifnot(abs(rmseValue - 0.674396098) < 1e-9)
 
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- predict(fitSeq, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.654893823) < 1e-9)
+stopifnot(abs(rmseValue - 0.655253456) < 1e-9)
 
 # using only ~0.5% of the ratings data
 percData <- 100*(125*216)/nrow(ratings)
@@ -1434,7 +1458,8 @@ newdata$predicted <- predict(fitSeq, newdata)
 # show how would be rated for the following technologies
 newdata %>% 
   filter(skill %in% c("tableau", "google-maps", "c++11", "c++17", 
-                      "ejb", "java-stream", "teradata", "itext")) %>%
+                      "ejb", "java-stream", "teradata", "itext",
+                      "blockchain", "apache-kafka")) %>%
   arrange(desc(predicted))
 
 # show the top 20 skills where the predicted rating is above average
