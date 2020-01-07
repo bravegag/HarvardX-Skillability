@@ -1225,8 +1225,8 @@ summaryRep <- comp %>%
             median=median(reputation))
 ```
 
-At this point we're ready to assess whether the user reputation average differences are significant per rating group. We take N random samples from each rating group and again use the $BC_a$ method to construct 95% confidence limits. Figure \@ref(fig:ratings-sig-comp) shows that several rating groups do not seem to be significatively different; namely, the $BC_a$ confidence limit notches clearly overlap for ratings 3, 3.5, 4, and 4.5:
-```{r ratings-sig-comp, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Boxplot of the users reputation per class \\& badge",fig.pos="H"}
+At this point we're ready to assess whether the user reputation average differences are significant per rating group. We take N random samples from each rating group and again use the $BC_a$ method to construct 95% confidence limits. Figure \@ref(fig:ratings-significance-plot) shows that several rating groups do not seem to be significatively different; namely, the $BC_a$ confidence limit notches clearly overlap for ratings 3, 3.5, 4, and 4.5:
+```{r ratings-significance-plot, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Boxplot of the users reputation per class \\& badge",fig.pos="H"}
 # set the seed again
 portable.set.seed(1)
 comp %>%
@@ -2188,6 +2188,7 @@ In this work we have unveiled multiple data science analysis use-cases possible 
 * how does the question sentiment affect the reputation of the users?
 * how does the sentiment also affect the score of the posts? 
 * how is a post predicted to score? 
+\
 
 However, in this study we have focussed on topics of more practical relevance and in the context of the recruitment industry i.e. clustering skills, identifying technology trends and putting them in geographical context. Furthermore, we have derived and designed a new user skill ratings dataset and presented a recommender system implementation to predict user skill ratings that offers many interesting uses in practice.
 \
@@ -2201,13 +2202,13 @@ We successfully applied dimensionality reduction in two different areas, first w
 Placing the main technology trends in geographical context as shown in Figure \@ref(fig:the-where-visualization) for the Stack Overflow users located in Switzerland reveals that Zurich has become a technology center. We identified all the main trends there, and a high quantity and quality of Stack Overflow users posting from this location. Indeed most of the big technology players have been expanding to Zurich including: Google, Microsoft, Facebook, Oracle, and others. We noticed too that the south-east parts of Switzerland e.g. Tessin don't seem to be too active technology-wise at least this isn't obvious by looking at the number of Stack Overflow users posting those locations. We expected to see above average blockchain activity in Zug believed to be a cryptocurrency haven but this doesn't seem to be the case again judging by the top posts from users located in that area.
 \
 
-Finally, we shifted our focus on building a new derived `ratings` dataset and we surprised ourselves facing an interesting statistical inference challenge. Namely to assess the significance of the user reputation average differences before and after building the dataset. Before building the dataset we assessed significance for the difference in user reputation averages between the class and badge groups. After building the dataset we assessed significance for the difference in user reputation averages between the rating groups. The result of this challenge led to our user skill rating assignment strategy described in Table \@ref(tab:badges-ratings-assignment). Building the `ratings` dataset was also an performance challenge which we attacked using, once more, blocking and parallel processing. Last but not least we built a new recommender system using the collaborative filtering technique and featuring two SGD algorithm flavours: classic and parallel. We used our model for predicting user skill ratings which delivered interesting and useful results.
+Finally, we shifted our focus to building a new dataset derived from Stack Overflow, the `ratings` dataset and we surprised ourselves facing an interesting statistical inference challenge. Namely to assess the significance of the user reputation average differences before and after building the `ratings` dataset. Before building the `ratings` dataset we assessed significance for the difference in user reputation averages between the class and badge groups, see Figure \@ref(fig:badges-significance-plot). After building the `ratings` dataset we assessed significance for the difference in user reputation averages between the rating groups, see Figure \@ref(fig:ratings-significance-plot). Due to the users reputation  strong departure from normality (see Figures \@ref(fig:histogram-reputation) and \@ref(fig:histogram-reputation-facet)) we tested significance of the difference in population medians and using the non-parametric $BC_a$ method see [@diciccio1996] and [@davison1997] for constructing 95% boostrap confidence limits. We verified the overlapping visual inspection of the confidence interval results using the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for all groups pair-wise. Three ratings groups were not found significatively different pair-wise and we gauged the impact in the user skill rating predictions. The result of this challenge led to our user skill rating assignment strategy described in Table \@ref(tab:badges-ratings-assignment). Building the `ratings` dataset was also a performance challenge which we attacked, once more, using blocking and parallel processing. Last but not least we built a new recommender system using the collaborative filtering technique and featuring two SGD algorithm flavours: classic and parallel. We used our model for predicting user skill ratings which delivered interesting and useful results.
 
 # Future Work {-}
 
 It was left out of scope to futher increase the search space used for the calibration of the LRMF model. We'd need better computer recources to achieve a more exhaustive search which would definitely lead to higher quality results.
 \
 
-We found interesting and could have also explored the possibility to have each core roughly tune the gradient descent separately so we could leave each core to train longer on its block.
+We also found interesting in the parallel SGD implementation researching the possibility to have each core mildly tune the gradient descent direction, and thus have them each train longer independently on its own block.
 
 # Bibliography {-}
