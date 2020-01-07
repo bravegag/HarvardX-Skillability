@@ -1325,7 +1325,7 @@ toc()
 
 ## The bestTune model found is:
 stopifnot(cvFit$bestTune$K == 10)
-stopifnot(cvFit$bestTune$gamma == 0.05)
+stopifnot(cvFit$bestTune$maxGamma == 0.05)
 stopifnot(cvFit$bestTune$lambda == 0.08)
 stopifnot(cvFit$bestTune$sigma == 0.1)
 
