@@ -218,8 +218,12 @@ saveObjectByName <- function(object, objectName, prefixDir="data",
 
 # Pretty prints the given tibble using kable
 # @param t the tibble to print
-prettyPrint <- function(t, latex_options = c("striped", "scale_down"), caption = NULL) {
-  return(kable(t, "latex", caption = caption, booktabs = T) %>% 
+# @param latex_options passed to kable
+# @param caption the table caption
+# @param booktabs the booktabs passed to kable
+prettyPrint <- function(t, latex_options = c("striped", "scale_down"), 
+                        caption = NULL, booktabs = T) {
+  return(kable(t, "latex", caption = caption, booktabs = booktabs) %>% 
            kable_styling(position = "center", latex_options = latex_options) %>%
            row_spec(0, bold = T))
 }
@@ -257,7 +261,7 @@ code:after {
 **DISCLAIMER Third-Party Trademark Notice**: All third-party trademarks referenced in this report (i.e. tags or skills), whether in logo form, name form or product form, or otherwise remain the property of their respective owners, and are used here only to refer the credentials and proficiency of the Stack Overflow users in using the technology, products or supporting solutions. The use of these trademarks in no way indicates any relationship between the author of this report and their respective owners. The description of the capabilities regarding any of the listed trademarks does not imply any relationship, affiliation, sponsorship or endorsement and reference to those shall be considered nominative fair use under the trademark law. 
 
 # Introduction {-}
-If you ever programmed, faced a technical question and "Googled it", it's needless to say that you have already probably landed in the Stack Overflow^[https://www.stackoverflow.com] site. Stack Overflow is a platform aimed at programmers of all levels for asking and answering technical questions. The platform was created in 2008^[https://en.wikipedia.org/wiki/Stack_Overflow] and it's the most popular site as part of the Stack Exchange Network^[https://stackexchange.com/sites#]. The platform offers multiple features, the most popular one being the ability to up vote and down vote user posts (either questions or answers) contributing to the posting user's overall reputation. Based on reputation, the plaform enables users to reach different priviledges such as the ability to vote, comment and edit posts. Furthermore, users are awarded "badges" (i.e. achievements) that relate to: the overall reputation, answers, questions or even the frequency of use of the site. The author of this work is an avid user of the platform^[https://stackoverflow.com/users/1142881/] since its inception and has periodically used it more towards asking rather than answering technical questions. A result of the present work is to more strongly consider using the site for **answering questions** rather than just asking.
+If you ever programmed, faced a technical question and "Googled it", it's needless to say that you have already probably landed in the Stack Overflow^[https://www.stackoverflow.com] site. Stack Overflow is a platform aimed at programmers of all levels for asking and answering technical questions. The platform was created in 2008^[https://en.wikipedia.org/wiki/Stack_Overflow] and it's the most popular site as part of the Stack Exchange Network^[https://stackexchange.com/sites#]. The platform offers multiple features, the most popular one being the ability to up vote and down vote user posts (either questions or answers) contributing to the posting user's overall reputation. Based on reputation, the plaform enables users to reach different priviledges such as the ability to vote, comment and edit posts. Furthermore, users are awarded "badges" (i.e. achievements) that relate to: the overall reputation, answers, questions or even the frequency of use of the site. The author of this work is an avid user of the platform^[https://stackoverflow.com/users/1142881/] since its inception and has periodically used it more towards asking rather than answering technical questions. A result of the present work is to more strongly consider using the site for answering questions rather than just asking.
 \
 
 Very luckily for us the Stack Overflow data is available for download^[https://archive.org/details/stackexchange] and in different formats, opening the door for conducting truly interesting data analysis with many applications in the context of the recruitment industry such as: resume (or CV) compilation^[https://www.kickstarter.com/projects/1647975128/one-thousand-words-cv-1kwcv/], job candidate shortlisting, job candidate assessment, staff skills assessment, technology trends analysis, and many more.
@@ -1541,22 +1545,28 @@ s_{1} & s_{2} & \cdots & s_{j} & \cdots & s_{M} \\
 \end{bmatrix}
 $$
 \
-We also implemented a lock-free multi-core parallel^[Using `parallel::mclapply(...)` see https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html] variation of the classic SGD algorithm that trains faster. The key idea is to work in parallel on mutually exclusive subsets of the P and Q matrices, creating as many mutually exclusive subset combinations as there are cores available. We achieve that by first creating a blocks specification^[See https://stackoverflow.com/questions/59154906] e.g. for a 3-core system we have:
+We also implemented a lock-free multi-core parallel^[Using `parallel::mclapply(...)` see https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html] variation of the classic SGD algorithm that trains faster. The key idea is to work in parallel on mutually exclusive column subsets of the P and Q matrices. We create as many mutually exclusive matrix index subset combinations of P and Q as there are cores available. We achieve that by first creating a blocks specification^[See https://stackoverflow.com/questions/59154906]. For example, assuming a 3 core system we would have:
 
-```{r method-blocking-poc1, echo=TRUE, message=TRUE}
+```{r method-blocking-poc1, echo=TRUE, message=TRUE, fig.pos="H"}
 ncores <- 3
 bi <- rep(0:(ncores-1), ncores)
 bj <- (bi + rep(0:(ncores-1), 1, each = ncores)) %% ncores
 blocks <- tibble(bi=bi, bj=bj)
 prettyPrint(
   blocks
-, latex_options = c("striped"))
+, latex_options = NULL, booktabs = F, 
+caption = "Parallel block groups specification, contains all possible permutations of 3 in 2") %>%
+  row_spec(1:3, background = "#E41A1C") %>%
+  row_spec(4:6, background = "#377EB8") %>%
+  row_spec(7:9, background = "#4DAF4A")
 ```
 
-The blocks specification above give us 3 different block groups (every 3 consecutive rows) in i (users) and j (skills) to run in parallel and mutual exclusion. Therefore, selecting rows as described in the following listing we can filter the matrices P and Q for users and skills that match those blocks and compute the gradient updates corresponding to those blocks in parallel:
+Table \@ref(tab:method-blocking-poc1) depicts the blocks specification containing 3 different block groups (every 3 consecutive rows) in i (users) and j (skills) to run in parallel and mutual exclusion. Therefore, selecting one of these three block groups randomly choosing rows as described in the following listing we can filter the matrices P and Q for users and skills that match those blocks and compute the gradient updates corresponding to those blocks in parallel:
 ```{r method-blocking-poc2, echo=TRUE, message=TRUE}
 # first group of mutually exclusive blocks
-prettyPrint(blocks %>% slice(1:3), latex_options = c("striped"))
+prettyPrint(blocks %>% slice(1:3), 
+            latex_options = NULL, booktabs = F) %>% 
+  row_spec(1:3, background = "#E41A1C")
 ```
 
 In this case one core will work on users and skills whose `i %% ncores == 0 & j %% ncores == 0` respectively, another core will work on `i %% ncores == 1 & j %% ncores == 1` and the third core on `i %% ncores == 2 & j %% ncores == 2`. However, doing so will only train those block combinations. Therefore at every iteration of the algorithm and before running the batch updates, we randomly choose which of the three block groups to use, either: `blocks[1:3,]`, `blocks[4:6,]` or `blocks[7:9,]` and each core will run batch updates in a loop ensuring maximum CPU utilization. We would of course like to run long batches in parallel but doing so may lead the SGD algorithm advancing in the wrong direction without any chance for correction.
@@ -1987,19 +1997,44 @@ ncores <- detectCores()
 
 # Results
 
-Now we're ready to run our model implementation, first we need to create a calibration set (small subset of the training set):
+Now we're ready to run our model implementation, first we need to create a calibration set (small subset of the training set). The calibration set was constructed taking special care of the following points:
+
+* We need to ensure that the set leads to a fixed bound in the amount of memory^[Which is driven by the dimensions of matrices P and Q, by predefining the number of distinct users N, we have a bound on that.] required for calibrating the model by limiting the initial number of distinct users. Note that we run cross validation in parallel, and thus we need a bound in memory usage per fold.
+* To ensure representativeness of the original data, we sample equal number of distinct random users within each rating group (there are eight rating groups i.e. `length(seq(1.5, 5.0, by=0.5))`).
+* We want the set to be random and this is guaranteed by the previous point.
+* The resulting number of calibration samples doesn't affect either performance or the algorithm's memory usage given that we have fixed the distinct number of users and skills, therefore we don't need to trim the set any further.
+\
+
+We construct the calibration set using the following code:
 ```{r lrmf-build-calibration-set, echo=TRUE, message=TRUE}
-tic("collecting the calibration set of 2k samples")
+N <- 240
+tic(sprintf("preparing a calibration set of approximately %d random users", N))
 # set the seed again
 portable.set.seed(1)
+# choose 
+usersSel <- trainSet %>% 
+  group_by(rating) %>%
+  select(userId) %>% 
+  unique() %>% 
+  sample_n(N / 8)
+# all ratings for those users
 calibrationSet <- trainSet %>%
-  sample_n(2000)
+  semi_join(usersSel, by="userId")
 toc()
+rm(usersSel, N)
 
-# how many distinct skills and users in the calibration set?
-cat(sprintf("The calibration set contains %d unique skills and %d users\n", 
-            length(unique(calibrationSet$skill)), 
-            length(unique(calibrationSet$userId))))
+# how many rows, distinct skills and users in the calibration set?
+cat(sprintf("The calibration set contains %d rows, %d unique users and %d skills\n", 
+            nrow(calibrationSet),
+            length(unique(calibrationSet$userId)), 
+            length(unique(calibrationSet$skill))))
+
+# check the ratings distribution of the calibration set
+prettyPrint(
+  calibrationSet %>% 
+    group_by(rating) %>% 
+    count()
+, latex_options = c("striped"), caption = "Ratings distribution of the calibration set")
 ```
 
 Then we calibrate our model (i.e. run cross-validation) using the `caret` package to find the best hyper-parameters, we also check for reproducible results:
@@ -2196,7 +2231,7 @@ However, in this study we have focussed on topics of more practical relevance an
 First we've built a fully automated R script to: download, extract, parse, clean and store the Stack Overflow data. It was already a challenge to start with since some of the extracted XML files expand to 75GB in size. We applied blocking and parallel processing in this and other areas of this work.
 \
 
-We successfully applied dimensionality reduction in two different areas, first we applied PCA to the co-occurrence matrix of skills in questions and in order to identify the main technology trends occurring in the last ten years which was show in Figure \@ref(fig:the-what-visualization). As discussed, running this analysis in a rolling time window fashion we would discover the changes in technology trends over different periods of time. As result of this analysis we learned from the first principal component that the technologies explaining most of the variance in the data are related to blockchain, cloud computing, build, deployment tools and data visualization. Although not totally surprising it's interesting to learn that blockchain seems to be applied in many different contexts. Another take away result is that cloud computing is ubiquitous. It's definitely a strong asset for any technology professional to master.
+We explored the data and noticed many important details e.g. answers are twice as likely to be up voted compared to questions even though providing an interesting well-written question takes about the same amount of effort as providing high quality answers^[This is partly confirmed by a recent Stack Overflow decision to weight questions equally as answers https://stackoverflow.blog/2019/11/13/were-rewarding-the-question-askers/]. Therefore, we learned that reaching the "Great Question" is in average twice as difficult as reaching the "Great Answer" gold badge. We successfully applied dimensionality reduction in two different areas, first we applied PCA to the co-occurrence matrix of skills in questions and in order to identify the main technology trends occurring in the last ten years which was show in Figure \@ref(fig:the-what-visualization). As discussed, running this analysis in a rolling time window fashion we would discover the changes in technology trends over different periods of time. As result of this analysis we learned from the first principal component that the technologies explaining most of the variance in the data are related to blockchain, cloud computing, build, deployment tools and data visualization. Although not totally surprising it's interesting to learn that blockchain seems to be applied in many different contexts. Another take away result is that cloud computing is ubiquitous. It's definitely a strong asset for any technology professional to master.
 \
 
 Placing the main technology trends in geographical context as shown in Figure \@ref(fig:the-where-visualization) for the Stack Overflow users located in Switzerland reveals that Zurich has become a technology center. We identified all the main trends there, and a high quantity and quality of Stack Overflow users posting from this location. Indeed most of the big technology players have been expanding to Zurich including: Google, Microsoft, Facebook, Oracle, and others. We noticed too that the south-east parts of Switzerland e.g. Tessin don't seem to be too active technology-wise at least this isn't obvious by looking at the number of Stack Overflow users posting those locations. We expected to see above average blockchain activity in Zug believed to be a cryptocurrency haven but this doesn't seem to be the case again judging by the top posts from users located in that area.
