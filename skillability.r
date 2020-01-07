@@ -957,10 +957,10 @@ lrmf$parameters <- data.frame(parameter = c("K", "maxGamma", "lambda", "sigma"),
 # Define the required grid function, which is used to create the tuning grid (unless the user 
 # gives the exact values of the parameters via tuneGrid)
 lrmf$grid <- function(x, y, len = NULL, search = "grid") {
-  K <- 5:10
-  maxGamma <- c(0.05, 0.1, 0.12)
-  lambda <- c(0.003, 0.005, 0.01, 0.03, 0.08)
-  sigma <- c(0.05, 0.1)
+  K <- c(10, 11, 12)
+  maxGamma <- c(0.05, 0.1, 0.11)
+  lambda <- seq(0.05, 0.1, by=0.01)
+  sigma <- c(0.05, 0.1, 0.15)
   
   # to use grid search
   out <- expand.grid(K = K,
@@ -1277,7 +1277,7 @@ calibrationSet <- trainSet %>%
 toc()
 rm(usersSel)
 
-# how many distinct skills and users in the calibration set?
+# how many rows, distinct skills and users in the calibration set?
 cat(sprintf("The calibration set contains %d rows, %d unique users and %d skills\n", 
             nrow(calibrationSet),
             length(unique(calibrationSet$userId)), 
@@ -1324,10 +1324,10 @@ cvFit <- train(x = calibrationSet,
 toc()
 
 ## The bestTune model found is:
-stopifnot(cvFit$bestTune$K == 10)
+stopifnot(cvFit$bestTune$K == 11)
 stopifnot(cvFit$bestTune$maxGamma == 0.05)
-stopifnot(cvFit$bestTune$lambda == 0.08)
-stopifnot(cvFit$bestTune$sigma == 0.1)
+stopifnot(cvFit$bestTune$lambda == 0.1)
+stopifnot(cvFit$bestTune$sigma == 0.15)
 
 ##########################################################################################
 ## Fit the best model found to the complete training set.
@@ -1390,13 +1390,13 @@ rmseHist %>%
            y = rmseHist %>% 
              filter(method == sprintf("Parallel - %d cores", ncores)) %>% 
              last() %>% 
-             pull(rmse) - 0.005,
+             pull(rmse) - 0.004,
            label = sprintf("%.2f sec", elapsedPar)) + 
   annotate("text", x = 250, colour = colorSpec[1],
            y = rmseHist %>% 
              filter(method == "Classic") %>% 
              last() %>% 
-             pull(rmse) - 0.005, 
+             pull(rmse) - 0.004, 
            label = sprintf("%.2f sec", elapsedSeq)) + 
   ggtitle("Users-skills rating prediction using LRMF - Parallel vs. classic method")
 
@@ -1409,14 +1409,14 @@ predictedRatings <- predict(fitPar, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.666693065) < 1e-9)
+stopifnot(abs(rmseValue - 0.659181944) < 1e-9)
 
 ## TEST SET ACCESS ALERT! accessing the test set to compute RMSE.
 predictedRatings <- predict(fitSeq, testSet)
 rmseValue <- Metrics::rmse(predictedRatings, testSet$rating)
 cat(sprintf("RMSE on test data is %.9f\n", rmseValue))
 # check that we get reproducible results
-stopifnot(abs(rmseValue - 0.650501932) < 1e-9)
+stopifnot(abs(rmseValue - 0.650566815) < 1e-9)
 
 # using only ~0.5% of the ratings data
 percData <- 100*(125*216)/nrow(ratings)
@@ -1459,7 +1459,7 @@ newdata$predicted <- predict(fitSeq, newdata)
 newdata %>% 
   filter(skill %in% c("tableau", "google-maps", "c++11", "c++17", 
                       "ejb", "java-stream", "teradata", "itext",
-                      "blockchain", "apache-kafka")) %>%
+                      "blockchain", "apache-kafka", "haskell", "go")) %>%
   arrange(desc(predicted))
 
 # show the top 20 skills where the predicted rating is above average
