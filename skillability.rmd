@@ -49,6 +49,18 @@ biblio-style: apalike
 # clean the environment
 rm(list = ls())
 
+# switch over to US_en instead of the automatic de_CH
+Sys.setenv(LANG="en_US.UTF-8", 
+           LC_ADDRESS="en_US.UTF-8",
+           LC_IDENTIFICATION="en_US.UTF-8",
+           LC_MEASUREMENT="en_US.UTF-8",
+           LC_MONETARY="en_US.UTF-8",
+           LC_NAME="en_US.UTF-8",
+           LC_NUMERIC="en_US.UTF-8",
+           LC_PAPER="en_US.UTF-8",
+           LC_TELEPHONE="en_US.UTF-8",
+           LC_TIME="en_US.UTF-8")
+
 ##########################################################################################
 ## Install and load required library dependencies
 ##########################################################################################
@@ -1156,9 +1168,10 @@ local({
   # kable(tbl, "latex", escape = F, booktabs = T) %>% 
   
   kable(tbl, "latex", caption = "Rating assignments per badge and class", booktabs = T) %>% 
-    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = T) %>% 
-    column_spec(1, width = "3cm") %>% 
-    column_spec(4, width = "9.5cm") %>% 
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = T, 
+                  latex_options = c("striped")) %>% 
+    column_spec(1, width = "2.7cm") %>% 
+    column_spec(4, width = "9.6cm") %>% 
     row_spec(0, bold = T)
 })
 ```
@@ -1455,7 +1468,7 @@ We could keep on exploring, adding features and accounting for more interesting 
 
 ## Low-Rank Matrix Factorization
 
-In this section we present a recommender system for predicting user skill ratings using the collaborative filtering (CF)^[https://en.wikipedia.org/wiki/Collaborative_filtering] technique. More specifically we'll implement the model-based low-rank matrix factorization (LRMF) method see [@10.1145/1401890.1401944] and [@10.1109/MC.2009.263]. The principle is that there are latent structures in the data that once revealed, we have a low-dimensional representation we can use to make automatic predictions, in this case user skill rating predictions. The low-intrinsic dimension representation we obtain using LRMF can also be achieved by computing the singular value decomposition SVD^[https://en.wikipedia.org/wiki/Singular_value_decomposition] on the dense ratings matrix representation. However, this later approach is impractical and prohibitive when the dimensions of the dense representation are too large and the system is very sparse as in our case.
+In this section we present a recommender system for predicting user skill ratings using the collaborative filtering (CF)^[https://en.wikipedia.org/wiki/Collaborative_filtering] technique. More specifically we'll implement the model-based low-rank matrix factorization (LRMF) method see [@10.1145/1401890.1401944] and [@10.1109/MC.2009.263]. The principle is that there are latent structures in the data that once revealed, we have a low-dimensional representation we can use to make automatic predictions, in this case user skill rating predictions. The low-intrinsic dimension representation we obtain using LRMF can also be achieved by computing the singular value decomposition SVD^[https://en.wikipedia.org/wiki/Singular_value_decomposition] see [@golub13] on the dense ratings matrix representation. However, this later approach is impractical and prohibitive when the dimensions of the dense representation are too large and the system is very sparse as in our case.
 \
 
 Our algorithm will learn and encode a low-dimensional representation of the ratings within two matrices P and Q. P is a matrix of K latent rows (or features) and N columns corresponding to each distinct user. While Q is a matrix of K latent rows and M columns corresponding to each distinct skill. Note that we have encoded the two matrices in such a way that all matrix computations are done on the columns i.e. the dimensions corresponding to users and skills. Doing so we match R's default^[See https://cran.r-project.org/web/packages/reticulate/vignettes/arrays.html] column-major^[See https://en.wikipedia.org/wiki/Row-_and_column-major_order] order to achieve the best possible performance i.e. operate on contiguous memory when possible and avoid costly memory striding operations. Our LRMF cost function is then defined as follows:

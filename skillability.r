@@ -19,6 +19,18 @@ rm(list = ls())
 # trigger garbage collection and free some memory if possible
 gc(TRUE, TRUE, TRUE)
 
+# switch over to US_en instead of the automatic de_CH
+Sys.setenv(LANG="en_US.UTF-8", 
+           LC_ADDRESS="en_US.UTF-8",
+           LC_IDENTIFICATION="en_US.UTF-8",
+           LC_MEASUREMENT="en_US.UTF-8",
+           LC_MONETARY="en_US.UTF-8",
+           LC_NAME="en_US.UTF-8",
+           LC_NUMERIC="en_US.UTF-8",
+           LC_PAPER="en_US.UTF-8",
+           LC_TELEPHONE="en_US.UTF-8",
+           LC_TIME="en_US.UTF-8")
+
 ##########################################################################################
 ## Install and load required library dependencies
 ##########################################################################################
