@@ -1470,8 +1470,3 @@ newdata %>%
   filter(predicted > avg) %>% 
   top_n(20, predicted) %>%
   arrange(desc(predicted))
-  
-
-
-
-
