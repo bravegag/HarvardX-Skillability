@@ -5,10 +5,10 @@
 ## Description: This file listing provides fully automated Stackoverflow data download, 
 ##              extraction, parsing, cleaning and transformation delivering the final dataset 
 ##              as a few RDS files.
-## Recommendation: Run on Linux tested on Ubuntu 18.04
-## Requirements: The following system dependencies are required and must be installed 
-##               before running: `wc`, `split`, `awk`, `7z`, `rename`, `mv`, `grep` 
-##               and `time`.
+## Recommendation: To run on Linux, tested on Ubuntu 18.04
+## Requirements: An Unix-like environment is mandatory to run this script. The following 
+##               system dependencies are also required and must be installed before 
+##               running: `wc`, `split`, `awk`, `7z`, `rename`, `mv`, `grep` and `time`.
 ## Author: Giovanni Azua Garcia <giovanni.azua@outlook.com>
 ## Code License: AGPL v3.0 https://www.gnu.org/licenses/agpl-3.0.en.html
 ## Data License: CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/

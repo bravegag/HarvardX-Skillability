@@ -4,8 +4,9 @@
 ## Name: skillability.r
 ## Description: This file listing provides the data exploration, visualisation, modeling,
 ##              method and result analysis for the Stackoverflow data.
-## Recommendation: None
-## Requirements: R installed with all required packages.
+## Recommendation: Unix-like environments to be able to run the parallel multi-core 
+##                 implementations needed for caret::train(...) and parallel::mclapply(...)
+## Requirements: R 3.6.x installed with all required packages. 
 ## Author: Giovanni Azua Garcia <giovanni.azua@outlook.com>
 ## Code License: AGPL v3.0 https://www.gnu.org/licenses/agpl-3.0.en.html
 ## Data License: CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/
@@ -23,36 +24,49 @@ gc(TRUE, TRUE, TRUE)
 ## Install and load required library dependencies
 ##########################################################################################
 
-if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
-if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
-if(!require(boot)) install.packages("boot", repos = "http://cran.us.r-project.org")
-if(!require(purrr)) install.packages("purrr", repos = "http://cran.us.r-project.org")
-if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
-if(!require(tictoc)) install.packages("tictoc", repos = "http://cran.us.r-project.org")
-if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
-if(!require(stringr)) install.packages("stringr", repos = "http://cran.us.r-project.org")
-if(!require(doMC)) install.packages("doMC", repos = "http://cran.us.r-project.org")
-if(!require(parallel)) install.packages("parallel", repos = "http://cran.us.r-project.org")
-if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
-if(!require(ggmap)) install.packages("ggmap", repos = "http://cran.us.r-project.org")
-if(!require(ggrepel)) install.packages("ggrepel", repos = "http://cran.us.r-project.org")
-if(!require(scales)) install.packages("scales", repos = "http://cran.us.r-project.org")
-if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
-if(!require(Metrics)) install.packages("Metrics", repos = "http://cran.us.r-project.org")
-if(!require(here)) install.packages("here", repos = "http://cran.us.r-project.org")
+defaultRepos <- "http://cran.us.r-project.org"
+
+if(!require(tidyverse)) install.packages("tidyverse", repos = defaultRepos)
+if(!require(caret)) install.packages("caret", repos = defaultRepos)
+if(!require(boot)) install.packages("boot", repos = defaultRepos)
+if(!require(purrr)) install.packages("purrr", repos = defaultRepos)
+if(!require(data.table)) install.packages("data.table", repos = defaultRepos)
+if(!require(tictoc)) install.packages("tictoc", repos = defaultRepos)
+if(!require(lubridate)) install.packages("lubridate", repos = defaultRepos)
+if(!require(stringr)) install.packages("stringr", repos = defaultRepos)
+if(!require(parallel)) install.packages("parallel", repos = defaultRepos)
+if(!require(ggplot2)) install.packages("ggplot2", repos = defaultRepos)
+if(!require(ggmap)) install.packages("ggmap", repos = defaultRepos)
+if(!require(ggrepel)) install.packages("ggrepel", repos = defaultRepos)
+if(!require(scales)) install.packages("scales", repos = defaultRepos)
+if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = defaultRepos)
+if(!require(Metrics)) install.packages("Metrics", repos = defaultRepos)
+if(!require(rstudioapi)) install.packages("rstudioapi", repos = defaultRepos)
+if(!require(here)) install.packages("here", repos = defaultRepos)
 
 ##########################################################################################
 ## Setup initial global values
 ##########################################################################################
 
-# register cores for parallel processing
-ncores <- detectCores()
-registerDoMC(ncores)
+# check the platform OS type
+if(.Platform$OS.type == "unix") {
+  # use doMC when it's an Unix-like OS
+  if(!require(doMC)) install.packages("doMC", repos = defaultRepos)
 
-# set working path to this file's path
+  # register cores for parallel processing
+  ncores <- detectCores()
+  registerDoMC(ncores)
+  
+} else {
+  # NOTE! pending to port multi-core code to Windows
+  ncores <- 1
+}
+
+# set working path to our project's file path
 if (rstudioapi::isAvailable()) {
   currentPath <- rstudioapi::getActiveDocumentContext()$path
 } else {
+  # this will likely fail to find the current path, avoid if possible
   currentPath <- here()
 }
 setwd(dirname(currentPath))
@@ -102,10 +116,14 @@ filePathForObjectName <- function(objectName, prefixDir="data",
 # @param userName the GitHub user name e.g. "bravegag"
 # @param repoName the GitHub repository name e.g. "HarvardX-Skillability"
 # @param branchName the GitHub branch name e.g. "master"
+# @param fallbackUrl the url to fall back to when nothing else works.
+# @param retry whether to retry accessing the data file.
 # @returns the dataset by name.
 readObjectByName <- function(objectName, prefixDir="data", rdsDir="rds", ext=".rds", 
-                             userName="bravegag", repoName="HarvardX-Skillability", branchName="master", 
-                             baseUrl="https://github.com/%s/%s/blob/%s/data/rds/%s?raw=true") {
+                             userName="bravegag", repoName="HarvardX-Skillability", branchName="master",
+                             baseUrl="https://github.com/%s/%s/blob/%s/data/rds/%s?raw=true",
+                             fallbackUrl="https://www.dropbox.com/sh/tylgh44b9qu0z16/AABh_HVZ7oxaPYDGZDhLMQJea?dl=1",
+                             retry=T) {
   tryCatch({
     filePath <- filePathForObjectName(objectName = objectName, prefixDir = prefixDir, 
                                       rdsDir = rdsDir, ext = ext)
@@ -122,13 +140,24 @@ readObjectByName <- function(objectName, prefixDir="data", rdsDir="rds", ext=".r
   }, warning = function(w) {
     cat(sprintf("WARNING - attempting to access or download the %s data:\n%s\n", 
                 objectName, w))
-    file.remove(filePath)
     return(NULL)
   }, error = function(e) {
     cat(sprintf("ERROR - attempting to access or download the %s data:\n%s\n", 
                 objectName, e))
-    file.remove(filePath)
-    return(NULL)
+    if (retry) {
+      cat('RECOVERY: hold tight falling back to Dropbox download ... \n')
+      # save to current working directory
+      zipFile <- "rds.zip"
+      download.file(fallbackUrl, zipFile)
+      # extract the file into the right folder
+      rdsFolder <- file.path(prefixDir, rdsDir)
+      unzip(zipFile, exdir = rdsFolder, overwrite = T)
+      file.remove(zipFile)
+      # retry with the files downloaded from dropbox
+      return(readObjectByName(objectName, retry=F))
+    } else {
+      return(NULL)
+    }
   }, finally = {
     # nothing to do here
   })  
@@ -804,6 +833,12 @@ for (i in 1:ncol(c)) {
 ## Split the ratings dataset into training and test sets.
 ##########################################################################################
 
+# we shouldn't need these anymore
+rm(users, questions, answers, badges, tags)
+
+# free a bit of memory if possible
+gc(TRUE, TRUE, TRUE)
+
 # what's the number of unique users, skills and how sparse is it?
 ratings %>% 
   summarise(users = n_distinct(userId), 
@@ -1271,7 +1306,7 @@ tic(sprintf("preparing a calibration set of %d random users", N))
 portable.set.seed(1)
 usersSel <- trainSet %>% 
   group_by(rating) %>%
-  select(userId) %>% 
+  select(userId, rating) %>% 
   unique() %>% 
   sample_n(N / 8)
 # all ratings for those users
