@@ -268,18 +268,32 @@ filePathForObjectName <- function(objectName, prefixDir="data",
 readObjectByName <- function(objectName, prefixDir="data", rdsDir="rds", ext=".rds", 
                              userName="bravegag", repoName="HarvardX-Skillability", branchName="master", 
                              baseUrl="https://github.com/%s/%s/blob/%s/data/rds/%s?raw=true") {
-  filePath <- filePathForObjectName(objectName = objectName, prefixDir = prefixDir, 
-                                    rdsDir = rdsDir, ext = ext)
-  fileName <- basename(filePath)
-  if (!file.exists(filePath)) {
-    # download the file
-    url <- sprintf(baseUrl, userName, repoName, branchName, fileName)
-    cat(sprintf("downloading \"%s\"\n", url))
-    download.file(url, filePath, extra="L")
-  } else {
-    cat(sprintf("object \"%s\" exists, skipping download ...\n", filePath))
-  }
-  return(readRDS(filePath))
+  tryCatch({
+    filePath <- filePathForObjectName(objectName = objectName, prefixDir = prefixDir, 
+                                      rdsDir = rdsDir, ext = ext)
+    fileName <- basename(filePath)
+    if (!file.exists(filePath)) {
+      # download the file
+      url <- sprintf(baseUrl, userName, repoName, branchName, fileName)
+      cat(sprintf("downloading \"%s\"\n", url))
+      download.file(url, filePath, extra="L")
+    } else {
+      cat(sprintf("object \"%s\" exists, skipping download ...\n", filePath))
+    }
+    return(readRDS(filePath))
+  }, warning = function(w) {
+    cat(sprintf("WARNING - attempting to access or download the %s data:\n%s\n", 
+                objectName, w))
+    file.remove(filePath)
+    return(NULL)
+  }, error = function(e) {
+    cat(sprintf("ERROR - attempting to access or download the %s data:\n%s\n", 
+                objectName, e))
+    file.remove(filePath)
+    return(NULL)
+  }, finally = {
+    # nothing to do here
+  })  
 }
 
 # Saves the object (dataset or otherwise) by name, the required folders will be 

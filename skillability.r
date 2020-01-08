@@ -33,7 +33,6 @@ if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-
 if(!require(stringr)) install.packages("stringr", repos = "http://cran.us.r-project.org")
 if(!require(doMC)) install.packages("doMC", repos = "http://cran.us.r-project.org")
 if(!require(parallel)) install.packages("parallel", repos = "http://cran.us.r-project.org")
-if(!require(microbenchmark)) install.packages("microbenchmark", repos = "http://cran.us.r-project.org")
 if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
 if(!require(ggmap)) install.packages("ggmap", repos = "http://cran.us.r-project.org")
 if(!require(ggrepel)) install.packages("ggrepel", repos = "http://cran.us.r-project.org")
@@ -107,18 +106,32 @@ filePathForObjectName <- function(objectName, prefixDir="data",
 readObjectByName <- function(objectName, prefixDir="data", rdsDir="rds", ext=".rds", 
                              userName="bravegag", repoName="HarvardX-Skillability", branchName="master", 
                              baseUrl="https://github.com/%s/%s/blob/%s/data/rds/%s?raw=true") {
-  filePath <- filePathForObjectName(objectName = objectName, prefixDir = prefixDir, 
-                                    rdsDir = rdsDir, ext = ext)
-  fileName <- basename(filePath)
-  if (!file.exists(filePath)) {
-    # download the file
-    url <- sprintf(baseUrl, userName, repoName, branchName, fileName)
-    cat(sprintf("downloading \"%s\"\n", url))
-    download.file(url, filePath, extra="L")
-  } else {
-    cat(sprintf("object \"%s\" exists, skipping download ...\n", filePath))
-  }
-  return(readRDS(filePath))
+  tryCatch({
+    filePath <- filePathForObjectName(objectName = objectName, prefixDir = prefixDir, 
+                                      rdsDir = rdsDir, ext = ext)
+    fileName <- basename(filePath)
+    if (!file.exists(filePath)) {
+      # download the file
+      url <- sprintf(baseUrl, userName, repoName, branchName, fileName)
+      cat(sprintf("downloading \"%s\"\n", url))
+      download.file(url, filePath, extra="L")
+    } else {
+      cat(sprintf("object \"%s\" exists, skipping download ...\n", filePath))
+    }
+    return(readRDS(filePath))
+  }, warning = function(w) {
+    cat(sprintf("WARNING - attempting to access or download the %s data:\n%s\n", 
+                objectName, w))
+    file.remove(filePath)
+    return(NULL)
+  }, error = function(e) {
+    cat(sprintf("ERROR - attempting to access or download the %s data:\n%s\n", 
+                objectName, e))
+    file.remove(filePath)
+    return(NULL)
+  }, finally = {
+    # nothing to do here
+  })  
 }
 
 # Saves the object (dataset or otherwise) by name, the required folders will be 
@@ -401,10 +414,10 @@ highlightLog %>%
 ## Data exploration and visualization: Geo-context
 ##########################################################################################
 
-# try to access or download it first
+# try to access or download the data file first
 usersCh <- readObjectByName("UsersCH")
 # do this only if the file isn't there to avoid costly Google geomapping calls
-if (!file.exists(filePathForObjectName("UsersCH"))) {
+if (is.null(usersCh) && !file.exists(filePathForObjectName("UsersCH"))) {
   # the environment variable GOOGLE_API_KEY is required or simply copy-paste your
   # google key instead. To obtain a google key, follow the steps outlined here:
   # https://developers.google.com/maps/documentation/javascript/get-api-key
@@ -428,7 +441,6 @@ if (!file.exists(filePathForObjectName("UsersCH"))) {
   # write the usersCh to disk
   saveObjectByName(usersCh, "UsersCH")
 }
-usersCh <- readObjectByName("UsersCH")
 # expected number of users located in Switzerland
 stopifnot(nrow(usersCh) == 4258)
 
@@ -511,7 +523,7 @@ usersChTop %>%
 # try to access or download it first
 map <- readObjectByName("SwissMap")
 # do this only if the file isn't there to avoid costly Google map calls
-if (!file.exists(filePathForObjectName("SwissMap"))) {
+if (is.null(map) && !file.exists(filePathForObjectName("SwissMap"))) {
   # the environment variable GOOGLE_API_KEY is required or simply copy-paste your
   # google key instead. To obtain a google key, follow the steps outlined here:
   # https://developers.google.com/maps/documentation/javascript/get-api-key
@@ -527,7 +539,6 @@ if (!file.exists(filePathForObjectName("SwissMap"))) {
                                      sep=""))
   saveObjectByName(map, "SwissMap")
 }
-map <- readObjectByName("SwissMap")
 
 # plot the top technology trends in Geo-context in Switzerland
 ggmap(map) + 
