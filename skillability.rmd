@@ -49,18 +49,6 @@ biblio-style: apalike
 # clean the environment
 rm(list = ls())
 
-# switch over to US_en instead of the automatic de_CH
-Sys.setenv(LANG="en_US.UTF-8", 
-           LC_ADDRESS="en_US.UTF-8",
-           LC_IDENTIFICATION="en_US.UTF-8",
-           LC_MEASUREMENT="en_US.UTF-8",
-           LC_MONETARY="en_US.UTF-8",
-           LC_NAME="en_US.UTF-8",
-           LC_NUMERIC="en_US.UTF-8",
-           LC_PAPER="en_US.UTF-8",
-           LC_TELEPHONE="en_US.UTF-8",
-           LC_TIME="en_US.UTF-8")
-
 ##########################################################################################
 ## Install and load required library dependencies
 ##########################################################################################
@@ -281,7 +269,7 @@ code:after {
 **DISCLAIMER Third-Party Trademark Notice**: All third-party trademarks referenced in this report (i.e. tags or skills), whether in logo form, name form or product form, or otherwise remain the property of their respective owners, and are used here only to refer the credentials and proficiency of the Stack Overflow users in using the technology, products or supporting solutions. The use of these trademarks in no way indicates any relationship between the author of this report and their respective owners. The description of the capabilities regarding any of the listed trademarks does not imply any relationship, affiliation, sponsorship or endorsement and reference to those shall be considered nominative fair use under the trademark law. 
 
 # Introduction {-}
-If you ever programmed, faced a technical question and "Googled it", it's needless to say that you have already probably landed in the Stack Overflow^[https://www.stackoverflow.com] site. Stack Overflow is a platform aimed at programmers of all levels for asking and answering technical questions. The platform was created in 2008^[https://en.wikipedia.org/wiki/Stack_Overflow] and it's the most popular site as part of the Stack Exchange Network^[https://stackexchange.com/sites#]. The platform offers multiple features, the most popular one being the ability to up vote and down vote user posts (either questions or answers) contributing to the posting user's overall reputation. Based on reputation, the plaform enables users to reach different priviledges such as the ability to vote, comment and edit posts. Furthermore, users are awarded "badges" (i.e. achievements) that relate to: the overall reputation, answers, questions or even the frequency of use of the site. The author of this work is an avid user of the platform^[https://stackoverflow.com/users/1142881/] since its inception and has periodically used it more towards asking rather than answering technical questions. A result of the present work is to more strongly consider using the site for answering questions rather than just asking.
+If you ever programmed, faced a technical question and "Googled it", it's needless to say that you have already probably landed in the Stack Overflow^[https://www.stackoverflow.com] site. Stack Overflow is a platform aimed at programmers of all levels for asking and answering technical questions. The platform was created in 2008^[https://en.wikipedia.org/wiki/Stack_Overflow] and it's the most popular site as part of the Stack Exchange Network^[https://stackexchange.com/sites#]. The platform offers multiple features, the most popular one being the ability to upvote and downvote user posts (either questions or answers) contributing to the posting user's overall reputation. Based on reputation, the plaform enables users to reach different priviledges such as the ability to vote, comment and edit posts. Furthermore, users are awarded "badges" (i.e. achievements) that relate to: the overall reputation, answers, questions or even the frequency of use of the site. The author of this work is an avid user of the platform^[https://stackoverflow.com/users/1142881/] since its inception and has periodically used it more towards asking rather than answering technical questions. A result of the present work is to more strongly consider using the site for answering questions rather than just asking.
 \
 
 Very luckily for us the Stack Overflow data is available for download^[https://archive.org/details/stackexchange] and in different formats, opening the door for conducting truly interesting data analysis with many applications in the context of the recruitment industry such as: resume (or CV) compilation^[https://www.kickstarter.com/projects/1647975128/one-thousand-words-cv-1kwcv/], job candidate shortlisting, job candidate assessment, staff skills assessment, technology trends analysis, and many more.
@@ -295,13 +283,13 @@ We first focus in delivering a fully automated method and R code to download, ex
 Questions in Stack Overflow contain one or more tags e.g. [java](https://stackoverflow.com/questions/tagged/java]). For professionals who work in programming these tags are skills and would be listed as such in a resume (or CV)^[https://www.dropbox.com/s/6t7mq5zcztarah4/1kwcv_prototype_Giovanni.pdf?dl=1]. Therefore, in this analysis step we'd like to find the top skills by frequency of use, establish a proximity measure and discover skill groups. We're also  interested in discovering what major technology trends exist and their importance: in other words, how those skill clusters have evolved over time.
 \
 
-To this end, the top tags (or skills) are first selected. The key modeling approach (in NLP terms) is to view questions as "documents" and skills as "words" and count how many times skills occur pair-wise together in the same questions, therefore we generate a skills co-occurrence matrix. We then compute Principal Component Analysis (PCA) on the scaled co-occurrence matrix. The first two principal components reveal what are the skill groups that explain most of the variance in the data or how we like to call it the main "technology trends". We visualize the top and bottom ends of these two principal components. The remaining PCA components reveal other skill groups.
+To this end, the top tags (or skills) are first selected. The key modeling approach (in NLP terms) is to view questions as "documents" and skills as "words" and count how many times skills occur pair-wise together in the same questions, therefore we generate a skills co-occurrence matrix. We then compute Principal Component Analysis (PCA) on the scaled co-occurrence matrix. The first two principal components reveal what the skill groups explaining most of the variance in the data are or how we prefer to call it, the main technology trends. We visualize the top and bottom ends of these two principal components. The remaining PCA components reveal other skill groups.
 \
 
 This first analysis step enpower us to answer many practical questions, for example:
 
 * As a programmer: what are the main technology trends at the moment and which one shall I invest learning on?
-* As a company: we'd like to build a new product, which technology stack should we use? check the top components for the most popular stacks in the area required.
+* As a company: we'd like to build a new product, which technology stack should we use? review the top components for the most popular stacks in the area required.
 * As a resume (or CV) compilation service: suggest candidates with skills they may have overlooked to include in their CV and are among the most important e.g. when listing `java`, suggest also `java-ee`.
 
 Note that applying this method in a rolling time window fashion e.g. every year compute this analysis for a time window of three years ending at the given date; will reveal the industry changes in technology trends over time.
@@ -326,23 +314,23 @@ The author of this work has in the past applied to jobs with listing describing 
 This project reminded of another anecdote regarding a collegue that was very unsure which graduate program to pursue. Surprisingly he decided to ask the admissions secretary who recommended that he would be better off going for a master in Computational Biology, and so he did. In addition to asking someone without a specialised scientific knowledge, could we not also trust a machine learning model to recommend what future career to pursue given your skill ratings?
 \
 
-In this final step a user skill `ratings` dataset derivation is designed, constructed and modeled to solve the ultimate task covered in this project: to predict how good a candidate would be in a skill for which there is no previous evidence. That's it, we present and implement a recommender system to predict user skill ratings using the collaborative filtering approach. More specifically, we'll apply the model-based approach using low-rank matrix factorization (LRMF) and two implementation variations of the stochastic gradient descent (SGD) algorithm to fit this model. The first algorithm is based on the classic SGD with multiple improvements for faster and better convergence e.g. cast the `P` and `Q` matrices of the SGD algorithm in column-major ordering to match the R's default matrix memory ordering. The second algorithm is an R-based lock-free parallel multi-core SGD variation of the first featuring a speed up of roughly 2x with comparable high quality out-of-sample RMSE result and with potential for higher speed ups. However, we first navigate through a simpler baseline model implementation based on isolating the different biases or effects and there we'll outline some interesting findings.
+In this final step a user skill `ratings` dataset derivation is designed, constructed and modeled to solve the ultimate task covered in this project: to predict how good a candidate would be in a skill for which there is no previous evidence. That's it, we present and implement a recommender system to predict user skill ratings using the collaborative filtering (CF) approach. More specifically, we'll apply the model-based approach using low-rank matrix factorization (LRMF) and two implementation variations of the stochastic gradient descent (SGD) algorithm to fit this model. The first algorithm is based on the classic SGD with multiple improvements for faster and better convergence e.g. design the `P` and `Q` matrices of the SGD algorithm in a way that aligns all matrix operation workloads with R's column-major default matrix order. The second algorithm is an R-based lock-free parallel multi-core SGD variation of the first featuring a speed up of roughly 2x with comparable high quality out-of-sample RMSE results and with potential for higher speed ups. However, we first navigate through a simpler baseline model implementation based on isolating the different biases or effects and there we'll outline some really interesting findings.
 \
 
-What used to be just an intuitive feeling was confirmed by the model employed in this project as it predicted the author's rating on `tableau` to be well above average. What's the moral of the story? hiring personnel could be made more efficient by broadening a search through related skills which don't readily match the job requirements. They can do so by consulting a machine learning model like the one we built in this project.
+What used to be just an intuitive feeling was confirmed by the CF model employed in this project as it predicted the author's rating on `tableau` to be well above average. What's the moral of the story? hiring personnel could be made more efficient by broadening a search through related skills which don't readily match the job requirements. They can do so by consulting a machine learning model like the one we've built in this project.
 \
 
 This last analysis enables us to answer many practical questions too, for example:
 
 * As a programmer: given my current skill ratings, in what technologies am I predicted to perform above average?
-* As a company: Can we reorganize and optimize our skills distribution per department without firing / hiring anyone?
-* As a recruitment company: candidate X doesn't explicitly list required skill Y in her CV, however our model predicted her to be a perfect match for that job.
+* As a company: Can we reorganize and optimize our skills distribution per department without firing or hiring anyone?
+* As a recruitment company: candidate X doesn't explicitly list required skill Y in her resume; however, our model predicted her to be a perfect match for that job.
 
 # Data analysis
 
 ## Data import
 
-The script `create_dataset.r` contains all the code to automatically download, extract, parse, clean and construct all the complete dataset required for analysis e.g. the `ratings` dataset. The script is large and only the most important points will be covered; however, the script is well structured and commented. Running `create_dataset.r` the first time may take several hours and require large amounts of free disk disk space. Furthermore the script requires running in an Unix-like environment^[It was tested in Ubuntu 18.04 with 32GB RAM, a 6-core Intel i7-4960X and a SSD drive.] that has the following tools available: `wc`, `split`, `awk`, `7z`, `rename`, `mv`, `grep` and `time`. The script will automatically create and populate the relative folders `data/7z/*` containing the downloaded files shown in Table \@ref(tab:7z-files-summary); the folder `data/xml/*` will contain the extracted XML files and finally the folder `data/rds/*` will contain the final `rds` dataset files^[Available in the project's GitHub page: https://github.com/bravegag/HarvardX-Skillability]. Note that running `create_dataset.r` **is optional** as the final `rds` files are readily available under the relative folder `data/rds/*` in the project's GitHub repository https://github.com/bravegag/HarvardX-Skillability.
+The script `create_dataset.r` includes the code implementation to automatically download, extract, parse, clean and construct the complete dataset which is stored in `rds` format. It will also construct the derived `ratings.rds` dataset. The script is quite long and only the most important points will be covered; however, it's well structured and commented. Running `create_dataset.r` the first time may take several hours and require large amounts of free disk disk space. Furthermore the script requires running in an Unix-like^[Because of the dependency on the package `doMC` which isn't available for Windows.] environment^[It was tested in Ubuntu 18.04 with 32GB RAM, a 6-core Intel i7-4960X and a SSD drive.] that has the following tools available: `wc`, `split`, `awk`, `7z`, `rename`, `mv`, `grep` and `time`. The script will automatically create and populate the relative folders: `data/7z/*`, `data/xml/*` and `data/rds/*` containing the downloaded files shown in Table \@ref(tab:7z-files-summary), the extracted XML files and the final `rds` dataset files^[Available in the project's GitHub page: https://github.com/bravegag/HarvardX-Skillability] respectively. Note that running `create_dataset.r` **is optional** as the final `rds` files are readily available under the relative folder `data/rds/*` in the project's GitHub repository https://github.com/bravegag/HarvardX-Skillability.
 \
 
 ```{r 7z-files-summary, fig.pos="H"}
@@ -376,17 +364,17 @@ local({
 })
 ```
 
-The extracted XML file where up to 76.5GB in size. Several methods were tested to load, parse and extract the data from such big files and the best solution found was a combination of the following points^[See functions `downloadExtractAndProcessXml(...)` and `extractDataFromXml2(...)`]: 
+The extracted XML file where up to 76.5GB in size. Several methods were tested to load, parse and extract the data from such huge files and the best solution we found was a combination of the following points^[See functions `downloadExtractAndProcessXml(...)` and `extractDataFromXml2(...)`]:
 
-1. Splitting the huge files into smaller ones (split into as many files as there are cores available), loading and parsing the files in parallel. Note that the split files are temporarily written to the relative `data/xml` directory.
+1. Splitting the huge files into smaller ones (split into as many files as there are cores available), loading and parsing the files in parallel. Note that the split files are temporarily written to the relative `data/xml` directory which may therefore grow in size during the process.
 2. Using `readr::read_lines_chunked` to read chunks of XML, keeping the memory footprint low as each core will process a bounded chunk of XML.
 3. The trick to turn these smaller XML chunks of rows into a valid XML was to wrap them within `<xml>...</xml>` tags^[Credits given to the answer of https://stackoverflow.com/questions/59329354 for coining the idea.].
 4. Finally use the package `xml2` for parsing, extracting and consolidating the data into tibbles which are later stored as `rds` files.
 
-The function `extractDataFromXml2(...)` was made generic; it takes a `mapping` parameter that identifies which XML attributes to read and what column names they should be mapped to in the resulting tibble.
+The function `extractDataFromXml2(...)` is generic and can handle any Stack Overflow XML data file. The key was to feature a `mapping` parameter that identifies which XML attributes to read and what column names they should be mapped to in the resulting tibble.
 \
 
-Note that the huge Posts XML file contains both questions and answers and they're automatically segregated by grepping for attributes that would only be contained in either e.g. only questions contain the attribute `AnswerCount` so we do `system(command=sprintf("time grep \"AnswerCount\" %s/Posts.xml > %s/Questions.xml", xmlDir, xmlDir))`.
+Note that the huge XML file containing all posts needs first to be segregated by questions and answers. We do so grepping for attributes that would only occur in either e.g. only questions contain the attribute `AnswerCount` so we do `system(command=sprintf("time grep \"AnswerCount\" %s/Posts.xml > %s/Questions.xml", xmlDir, xmlDir))`.
 
 ## Data cleaning
 
@@ -427,7 +415,7 @@ local({
 })
 ```
 
-We notice that only 1.75% of the users are participative. The vast majority of users only seem to create a handful of posts and use the site in "read-only" mode i.e. not making any posts. Read-only users are not interesting for the different analyses because although they contribute to voting, we consider the lack of quality questions and answers to be equivalent to `NA`s and they were therefore excluded.
+We noticed that only 1.75% of the users are actually active in the platform. The vast majority of users only seem to create a handful of posts and use the site in "read-only" mode i.e. not producing any posts. Read-only users are not interesting for the different analyses because although they contribute to voting, we consider their lack of questions and answers to be equivalent to `NA`s and they were therefore excluded.
 
 ## Data exploration and visualization
 
@@ -443,34 +431,34 @@ badges <- readObjectByName("Badges")
 tags <- readObjectByName("Tags")
 ```
 
-The `users` dataset depicted in Table \@ref(tab:structure-users) includes all the users we have selected for analysis, each row is uniquely identified by the key `userId` which is used to link with other tables. The column `creationDate` timestamp represents the time when the user account was first created. Note that `location` is free text which we use later as input to the Google Geocoding API for generating geographic coordinates:
+The `users` dataset depicted in Table \@ref(tab:structure-users) includes all the users we have selected for analysis. Each row is uniquely identified by the `userId` key which is used to link with other tables. The column `creationDate` timestamp represents the time when the user account was created. The column `location` is provided by users as free text which we use later as input to the Google Geocoding API for generating geographic coordinates. Finally we will work extensively with the `reputation` column which represents the accrued user reputation as the weighted sum all of post upvotes minus the downvotes. In the `questions` and `answers` datasets the column `score` is equivalent to a `reputation` per post:
 ```{r structure-users, echo = TRUE, message = TRUE, fig.pos="H"}
 prettyPrint(head(glimpse(users)), 
             caption = "Users dataset structure")
 ```
 
-The `questions` dataset depicted in Table \@ref(tab:structure-questions) contains all the questions we have selected and each row is uniquely identified by the key `questionId` which is used to link with other tables. Note the `tags` column will be used extensively in this work; it has during the data cleaning phase already been preprocessed to pipe separated from HTML encoded entities. The column `acceptedAnswerId` identifies the accepted answer among all that corresponds to answers' `answerId`:
+The `questions` dataset depicted in Table \@ref(tab:structure-questions) contains all the questions we have selected and each row is uniquely identified by the `questionId` key which is used to link with other tables. Note the `tags` column will be used extensively in this work; it has during the data cleaning phase already been preprocessed to pipe separated from HTML encoded entities. The `acceptedAnswerId` column identifies each question's accepted answer, which is designated by the asking user:
 ```{r structure-questions, echo = TRUE, message = TRUE, fig.pos="H"}
 prettyPrint(head(glimpse(questions)), 
             latex_options = c("striped", "scale_down"), 
             caption = "Questions dataset structure")
 ```
 
-The `answers` dataset depicted in Table \@ref(tab:structure-answers) contains all the answers also uniquely identified by the key `answerId`. Note that we can find the tags or skills linked to an answer by joining with the `questions` frame via the "parent" `questionId` and reading the `tags` column:
+The `answers` dataset depicted in Table \@ref(tab:structure-answers) contains all the answers also uniquely identified by the `answerId` key. Note that we can determine the tags or skills linked to an answer by joining `answers` with `questions` by the `questionId` column:
 ```{r structure-answers, echo = TRUE, message = TRUE, fig.pos="H"}
 prettyPrint(head(glimpse(answers)),
             latex_options = c("striped", "scale_down"), 
             caption = "Answers dataset structure")
 ```
 
-The `badges` dataset depicted in Table \@ref(tab:structure-badges) contains the user badge assignments (linked via the foreign key `userId`), for example, the `gold` badge "Populist" is one of the hardest for an user to get and requires outscoring an already accepted answer with score of more than 10 by more than 2x of the accepted answer^[See https://stackoverflow.com/help/badges/62/populist]:
+The `badges` dataset depicted in Table \@ref(tab:structure-badges) contains the user badge assignments (linked via the `userId` foreign key), for example, the "Populist"^[See https://stackoverflow.com/help/badges/62/populist] is one of the hardest badges to get and requires outscoring an already accepted answer with a score of more than ten and by more than two times the score of the accepted answer:
 ```{r structure-badges, echo = TRUE, message = TRUE, fig.pos="H"}
 prettyPrint(head(glimpse(badges)), 
             latex_options = c("striped"), 
             caption = "Badges dataset structure")
 ```
 
-Finally the tags dataset depicted in Table \@ref(tab:structure-tags) contains the all the unique tags along with their use counts:
+Finally the tags dataset depicted in Table \@ref(tab:structure-tags) contains the all the unique tags along with their use counts. We use the name tags and skills indistintly in this project:
 ```{r structure-tags, echo = TRUE, message = TRUE, fig.pos="H"}
 prettyPrint(head(glimpse(tags)), 
             latex_options = c("striped"), 
@@ -479,7 +467,7 @@ prettyPrint(head(glimpse(tags)),
 
 ### Quick exploration
 
-Let's explore some interesting facts from the data we have, that is: the top ranking question, answer, user, tags (i.e. skills) and the top ten gold badges. The top ranking answer applies to the top ranking question and they relate to `c++`, `performance` and code `optimization`. The top ten gold badges reveal that being awarded with a "Great Question"^[See https://stackoverflow.com/help/badges/22/great-question] is harder than for a "Great Answer"^[See https://stackoverflow.com/help/badges/25/great-answer], and it's no wonder why, since answers receive in average twice as many up votes as questions:
+Let's explore some interesting facts from the data we have, that is: the top ranking question, answer, user, tags (i.e. skills) and the top ten gold badges. The top ranking answer applies to the top ranking question and they relate to `c++`, `performance` and code `optimization`. The top ten gold badges reveal that being awarded with a "Great Question"^[See https://stackoverflow.com/help/badges/22/great-question] is harder than for a "Great Answer"^[See https://stackoverflow.com/help/badges/25/great-answer], and it's no wonder why, since answers receive in average twice as many upvotes as questions:
 ```{r exploration-basic,echo=TRUE,message=TRUE}
 # what's the question with highest score?
 prettyPrint(
@@ -521,7 +509,7 @@ prettyPrint(
     arrange(awarded)
 , latex_options = c("striped"))
 
-# compare the average scores i.e. up votes for answers vs. questions
+# compare the average scores i.e. upvotes for answers vs. questions
 prettyPrint(
   questions %>% 
     summarise(postType='question',avg_score=mean(score)) %>%
@@ -530,7 +518,7 @@ prettyPrint(
 , latex_options = c("striped"))
 ```
 
-The following statistics reveal the highly skewed nature of the data (the mean is far from the median in most cases):
+In the following listing we compute the mean and median statistics for the some columns of interest. We learn the highly skewed nature of the data (the mean is far from the median in most cases):
 ```{r exploration-statistics,echo=TRUE,message=TRUE}
 # what's the average user reputation?
 prettyPrint(
@@ -563,7 +551,7 @@ prettyPrint(
 , latex_options = c("striped"))
 ```
 
-In Figure \@ref(fig:histogram-reputation) we apply the `log10` transformation^[We preferred to work with the `log10` for reputation because it's an order-invariant transformation, and easier to interpret than natural `log`.] to the users reputation and plot its histogram, the plot confirms that the users reputation is positively skewed. Remember that we set the user selection criteria to be: users with reputation greater than 999 or located in Switzerland, so there we have some of the users located in Switzerland to the left of $\text{log10}(999) \approx 3$ and we exclude them first:
+In Figure \@ref(fig:histogram-reputation) we apply the `log10` transformation^[We preferred to work with the `log10` for reputation because it's an order-invariant transformation, and easier to interpret than natural `log`.] to the users reputation and plot its histogram, the plot confirms that the users reputation is positively skewed. Remember that we set the user selection criteria to be: users with reputation greater than 999 or located in Switzerland, so there we have some of the users located in Switzerland to the left of $\text{log10}(999) \approx 3$ and we exclude those:
 ```{r histogram-reputation,echo=TRUE,message=TRUE,fig.cap="Histogram of users reputation",fig.pos="H"}
 users %>%
   filter(reputation > 999) %>%
@@ -576,7 +564,7 @@ users %>%
         axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Now, if we split the users per badges^[We chose only the badges relevant for our analysis see https://stackoverflow.com/help/badges] then the histograms look a bit nicer i.e. no longer so skewed but still asymmetrical and quite departed from a normal distribution:
+Now, if we split the user reputations per badge^[We chose only the badges relevant for our analysis see https://stackoverflow.com/help/badges] then the histograms look a bit nicer i.e. no longer so skewed but still asymmetrical and quite departed from a normal distribution:
 ```{r histogram-reputation-facet, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE,message=TRUE,fig.cap="Histogram of users reputation per badge",fig.pos="H"}
 # histogram of the log10-transfored of users reputation per badge and 
 # excluding users with less than 999 reputation 
@@ -757,10 +745,10 @@ nonHighlightLog <- nonHighlight %>%
          PC2=sign(PC2)*log10(abs(PC2)))
 ```
 
-Figure \@ref(fig:the-what-visualization) reveals the skill groups that explain most of the variance in the data or how we prefer to call it, the main technology trends. The top ten skills are highlighted in bold font-face. The top and bottom ends of the first principal component reveal "Blockchain, Cloud, Build and Data Visualization" (in red) and "Full Stack" (in blue) respectively. While the top and bottom ends of the second principal component reveal "Web Frontend & Mobile" (in green) and "Microsoft Stack" (in purple) respectively. Note that the technology trends were named e.g. "Microsoft Stack" after reviewing all the skills found in those segments and assigning a more general conceptual trend but the resulting groupings are not exact e.g. `c++` appears in the second component "Microsoft Stack" while the third component groups together **mostly** "Python & C++" skills e.g. `python`, `c++11`, `stl`, `boost`, `qt`, `visual-c++`, etc. 
+Figure \@ref(fig:the-what-visualization) reveals the skill groups that explain most of the variance in the data or how we prefer to call it, the main technology trends. The top ten skills are highlighted in bold font-face. The top and bottom ends of the first principal component reveal "Blockchain, Cloud, Build and Data Visualization" (in red) and "Full Stack" (in blue) respectively. While the top and bottom ends of the second principal component reveal "Web Frontend & Mobile" (in green) and "Microsoft Stack" (in purple) respectively. Note that the technology trends were named e.g. "Microsoft Stack" after reviewing all the skills found in those segments and assigning a more general conceptual trend but the resulting groupings are not exact e.g. `c++` appears in the second component "Microsoft Stack" while the third component groups together mostly "Python & C++" skills e.g. `python`, `c++11`, `stl`, `boost`, `qt`, `visual-c++`, etc.
 \
 
-The grouping here is very interesting, The link between cloud and build tools is clear, since most of the cloud technologies are related to and require building and deploying software. Furthermore, it would seem that blockchain software is linked to deploying software in the cloud; likewise there seems to be a link between software deployment, cloud technologies, generating reports and data visualization.
+The skill clusters are indeed very interesting. For example, in the top end of the first principal component depicted in red, the link between cloud and build tools is clear i.e. most of the cloud technologies are related to and require building and deploying software. Then it would seem that blockchain software is linked to deploying software in the cloud. Likewise there seems to be a link between software deployment, cloud technologies, generating reports and data visualization.
 ```{r the-what-visualization,echo=TRUE,message=FALSE,fig.cap="Top skills in each direction of the first two Principal Components PC1 and PC2",fig.pos="H"} 
 portable.set.seed(1)
 highlightLog %>% 
@@ -784,7 +772,7 @@ highlightLog %>%
 
 ### The Where: putting it in geographical context
 
-The following code, using a valid environment `GOOGLE_API_KEY`^[See instructions here to get a free trial Google API key https://developers.google.com/maps/documentation/javascript/get-api-key] will match all users located in Switzerland and compute their geographic coordinates using Google's geocoding API. We note that Switzerland has a large expatriate english-speaking technology community plus four official Swiss languages, therefore we filter for user `location` containing the Swiss country code `ch` or `switzerland` written in english or written using any of the four official Swiss languages: German `schweiz`, Italian `svizzera`, French `suisse` and Romansh `svizra`:
+Running the following listing with a valid Google API key^[See instructions here to get a free trial Google API key https://developers.google.com/maps/documentation/javascript/get-api-key] value set for the `GOOGLE_API_KEY` environment variable will match all users located in Switzerland and compute their geographic coordinates using Google's geocoding API. We note that Switzerland has a large expatriate english-speaking technology community plus four official Swiss languages, therefore we filter for lower case user `location` containing the Swiss country code `ch` or `switzerland` to match the country name written in English or written using any of the four official Swiss languages: German `schweiz`, Italian `svizzera`, French `suisse` and Romansh `svizra`:
 ```{r the-where-geocoding,echo=TRUE,message=TRUE}
 # do this only if the file isn't there to avoid costly Google geomapping calls
 if (!file.exists(filePathForObjectName("UsersCH"))) {
@@ -882,7 +870,7 @@ if (!file.exists(filePathForObjectName("SwissMap"))) {
 map <- readObjectByName("SwissMap")
 ```
 
-Figure \@ref(fig:the-where-visualization) depicts the technology trends discovered in the previous analysis and now shown in geographical context for Switzerland. We note that Zurich is becoming a true technology center in Europe as all the trends are there. The most prominent data point by score in Switzerland was reached by an user located in Zurich posting on Full Stack development. We can also see that the east and south of Switzerland e.g. the Tessin region has much lower activity technology-wise therefore it wound't be a wise decision looking for technology jobs there. The data points appearing in the center of Switzerland correspond to users who were not precise in providing their specific location i.e. they specified their location as "Switzerland" and that's the center of Switzerland but technology-wise we should not expect to find anything in the middle of the mountains. Geneve city was surprisingly less active in quantity and quality or may be that users there didn't provide their location precisely enough. The city of Bern shows two high scoring data points connected to the technology trends Microsoft Stack and Python & C++ respectively. We can also note several users in isolated Swiss regions working on `ios` i.e. potentially building iPhone applications in remote areas which would make sense.
+Figure \@ref(fig:the-where-visualization) depicts the technology trends discovered in the previous analysis and now shown in geographical context for Switzerland. We note that Zurich is becoming a true technology center in Europe as all the trends are there. The most prominent data point by score in Switzerland was reached by an user located in Zurich posting on Full Stack development. We can also observe that the east and south of Switzerland e.g. the Tessin region has much lower activity technology-wise therefore it wound't be a wise decision looking for technology jobs there. The data points appearing in the center of Switzerland correspond to users who were not precise in providing their specific location i.e. they specified their location as "Switzerland" and that's the center of Switzerland but technology-wise we should not expect to find anything in the middle of the mountains. Geneve city was surprisingly less active in quantity and quality or may be that users there didn't provide their location precisely enough. The city of Bern shows two high scoring data points connected to the technology trends Microsoft Stack and Python & C++ respectively. We can also note several users in isolated Swiss regions working on `ios` i.e. potentially building iPhone applications in remote areas which would make sense.
 ```{r the-where-visualization, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=FALSE,fig.cap="Users located in Switzerland and their matching technology trends, weighted by score",fig.pos="H"}
 # plot the top technology trends in Geo-context in Switzerland
 ggmap(map) + 
@@ -908,10 +896,10 @@ prettyPrint(
 One of the biggest challenges in this project was without any doubt to come up with a sound approach to assign skill ratings to users. First because there is no explicit link between users and skills and second because there isn't any apparent way to quantify a rating for a given user and skill. From the data exploration we know that questions contain `tags` (i.e. skills) and they also contain the posting `userId`. We also know that answers link to the parent question via the `questionId` and to the posting user via the `userId`. Therefore, through questions and answers we can link users and skills; namely the questions asked by an user: `user -> question -> tags` and the answers posted by an user: `user -> answer -> question -> tags`. 
 \
 
-But what about the ratings? This is where the `badges` dataset comes into play. Badges^[For a detailed description of the badge system see https://stackoverflow.com/help/badges.] are awarded to users for different reasons including how good an answer or question is, this "how good" is backed up by a quantity which is the answer or question score (i.e. the up or down votes), and thus we have a possible solution. The idea for filling the ratings would be to follow the same ordering provided by the badges system which is categorized with three quality class levels: `gold`, `silver` and `bronze`. We'd intuitively assume that e.g. an user that posted an answer which was awarded with `gold` for a question related to certain skills should be rated higher in those skills than an user asking a `silver` question on those same skills. But, will the order suggested by the badges system ensure significant differences among users? This is what we're about to find out in the following statistical inference analysis.
+But what about the ratings? This is where the `badges` dataset comes into play. Badges^[For a detailed description of the badge system see https://stackoverflow.com/help/badges.] are awarded to users for different reasons including how good an answer or question is, this "how good" is backed up by a quantity which is the answer or question score (i.e. the up or downvotes), and thus we have a possible solution. The idea for filling the ratings would be to follow the same ordering provided by the badges system which is categorized with three quality class levels: `gold`, `silver` and `bronze`. We'd intuitively assume that e.g. an user that posted an answer which was awarded with `gold` for a question related to certain skills should be rated higher in those skills than an user asking a `silver` question on those same skills. But, will the order suggested by the badges system ensure significant differences among users? This is what we're about to find out in the following statistical inference analysis.
 \
 
-We'd like to validate the hypothesis of whether the user groups would be significantly different given that he has been awarded a certain level badge. One possible way to do this is to use the user reputation which is an overall quantity calculated independently of specific questions and answers. We wouldn't want a model fed with "lucky" users landing with a very high rating for a skill. We'd also like to validate the ordering i.e. is the average reputation of users awarded with gold answer badges in average significantly better than that of users awarded with gold question badges?
+We'd like to validate the hypothesis of whether the awarded user groups would be significantly different with respect to the classes and badges. One possible way to do this, is to use the user reputation which is an overall quantity calculated independently of specific questions and answers. We wouldn't want to feed a model with data containing "lucky" users landing with very high ratings for a skill. We'd also like to validate the ordering i.e. is the average reputation of users awarded with gold answer badges in average significantly better than that of users awarded with gold question badges? specially taking into account the ambiguities what we've observed before, e.g. `gold` "Great Questions" are harder to be awarded than `gold` "Great Answers".
 \
 
 ```{r badges-significance-prep, fig.height=8, fig.width=8, echo=FALSE, message=FALSE}
@@ -986,7 +974,7 @@ comp <- comp %>%
   mutate(badge = factor(badge, levels=badgesOrder))
 ```
 
-Table \@ref(tab:badges-significance-avg) depicts the average reputations for users who have been granted the different badges of interest. The result gives us a rough idea of the order we are after. Recall that we've observed in Figure \@ref(fig:histogram-reputation) the users reputation to be highly skewed so we choose to work with the median as measure of central tendency instead of the mean. The result reveals that users granted with answer badges depict in average higher reputations than those granted question badges. We also note that users granted gold badges depict higher average reputation than that of users granted silver badges, similarly users granted silver badges tend to have higher reputations in average than users granted bronze badges.
+Table \@ref(tab:badges-significance-avg) depicts the average reputations for users who have been granted the different badges of interest. The result enlightens us with a rough idea of the order we are after. Recall that we've observed in Figure \@ref(fig:histogram-reputation) the user reputations to be highly skewed so we choose to work with the median as measure of central tendency instead of the mean. The results in Table \@ref(tab:badges-significance-avg) reveal that users granted with answer badges depict in average higher reputations than those granted question badges. We also note that users granted gold badges depict higher average reputation than that of users granted silver badges, similarly users granted silver badges tend to have higher reputations in average than users granted bronze badges.
 ```{r badges-significance-avg, echo=TRUE, message=FALSE, fig.pos="H"} 
 # checkout the average reputation ordering by badge to get an idea though
 # this is not the exact final ordering used due to the exclusion system.
@@ -1000,10 +988,10 @@ prettyPrint(
 , latex_options = c("striped"), caption = "Average user reputation per class \\& badge")  
 ```
 
-Note that since the `log` transformation preserves the order of the data i.e. if $x > y$ then $\text{log}(x) > \text{log}(y)$ and brings it to a nicer scale to work (e.g. for plotting) we're going to do conduct the following inference analysis using a `log10` transformation of the users reputation.
+Note that since the `log` transformation preserves the order of the data i.e. if $x > y$ then $\text{log}(x) > \text{log}(y)$ and brings it to a nicer scale to work with (e.g. for plotting) we're going to do conduct the following inference analysis using a `log10` transformation of the users reputation.
 \
 
-Figure \@ref(fig:badges-significance-answers-plot) reveals the user reputation ordering difference between gold, silver and bronze for answer badges. We see that the average within each group matches the expected level of the class i.e. users granted gold answer badges depict higher reputation average than those granted with silver and bronze answer badges. The vertical dashed lines show the median for each class:
+Figure \@ref(fig:badges-significance-answers-plot) reveals the user reputations ordering difference between gold, silver and bronze for answer badges. We see that the average within each group matches the expected level of the class i.e. users granted gold answer badges depict higher reputation average than those granted with silver and bronze answer badges. The vertical dashed lines show the median for each class:
 ```{r badges-significance-answers-plot, echo=TRUE, message=TRUE, fig.cap="Histograms of users reputation per Answer badges",fig.pos="H"}
 # create color specification for the different badges
 colorSpec <- c("#f9a602", "#c0c0c0", "#cd7f32")
@@ -1024,10 +1012,10 @@ comp %>%
              aes(xintercept=median, color=class), linetype="dashed")
 ```
 
-The results depicted above are in a way incomplete. In order to assign skill ratings to users we need to also exclude users that were previously rated on those skills i.e. there should be no duplicate and ambiguous rating for the same user and skill. But how do we choose the rating among all possible? We can agree on the following strategy: an user reaching a higher rating level with respect to a skill, such higher rating takes precedence over other possible ratings on that skill. That's it, an user is rated with the highest rating we have observed among all posts that relate to that skill. Therefore, we find the users in the highest badge and class level for a skill and assign the highest rating e.g. 5.0. Then, excluding those users that were already rated in those skills, we find the users in the next highest level for that skill and assign the second highest rating e.g. 4.5 and so on. Therefore, we'd implement an iterative exclusion process that grants user with ratings from 5.0 to 1.5 in steps of 0.5 i.e. `seq(5.0, 1.5, by=-0.5)`. 
+The results depicted above are in a way incomplete. In order to assign skill ratings to users we need to also exclude users that were previously rated on those skills i.e. there should be no duplicate and ambiguous rating for the same user and skill. But how do we choose the rating among all possible? We can agree on the following strategy: an user reaching the highest possible rating with respect to a skill, such higher rating takes precedence over other possible ratings on that skill. That's it, an user is rated with the highest rating we have observed among all posts that relate to that skill. Therefore, we find the users in the highest badge and class level for a skill and assign the highest rating e.g. 5.0. Then, excluding those users that were already rated in those skills, we find the users in the next highest level for that skill and assign the second highest rating e.g. 4.5 and so on. Therefore, we'd implement an iterative exclusion process that assigns user ratings from 5.0 to 1.5 in steps of 0.5 i.e. `seq(5.0, 1.5, by=-0.5)`. Some could argue that this strategy isn't optimal because the highest rating a user has ever had is not representative enough or the user could forget this skill after a long period not using it. However, we can also argue that if an user reaches a certain level for a skill, then the user should able to get back to that same level again is he or she wishes to.
 \
 
-We'd like to assses the significance of the difference in average reputation between the groups created using this exclusion process. To that end, we run the exclusion process starting with the average order suggested by the listing above. We then randomly sample N users per group, for instance, `N=1500` and compare their medians. Our final ordering is the one that depicts the reputation average and distribution of the random samples per group monotonically decreasing. We'd also like to use statistical inference to find whether there is significant difference in the user reputation population medians between these groups. However, we've observed before the in-group distributions' strong departure from normality in Figures \@ref(fig:histogram-reputation) and \@ref(fig:histogram-reputation-facet). Therefore, we construct 95% confidence limits using the non-parametric bias-corrected and accelerated bootstrap interval $BC_a$, a statistically robust algorithm for producing highly accurate confidence limits from a boostrap distribution see [@diciccio1996] and [@davison1997]. Although our samples are chosen randomly and we could resort to the Central Limit Theorem (CLT)^[See the https://en.wikipedia.org/wiki/Central_limit_theorem] we believe that the non-parametric $BC_a$ approach is more adequate and precise since no assumptions are required regarding the underlying distribution of the data.
+We'd like to assses the significance of the difference in average reputation between the groups created using this exclusion process. To that end, we run the exclusion process starting with the average order suggested by the listing above. We then randomly sample N users per group, for instance, `N=1500` and compare their medians. Our final ordering is the one that depicts the reputation average and distribution of the random samples per group monotonically decreasing. We'd also like to use statistical inference to assess whether there is significant difference in the user reputation population medians between these groups. However, we've observed before the in-group distributions' strong departure from normality in Figures \@ref(fig:histogram-reputation) and \@ref(fig:histogram-reputation-facet). Therefore, we construct 95% confidence limits using the non-parametric bias-corrected and accelerated bootstrap interval $BC_a$, a statistically robust algorithm for producing highly accurate confidence limits from a boostrap distribution see [@diciccio1996] and [@davison1997]. Although our samples are chosen randomly and we could resort to the Central Limit Theorem (CLT)^[See the https://en.wikipedia.org/wiki/Central_limit_theorem] we believe that the non-parametric $BC_a$ approach is more adequate and precise since no assumptions are required regarding the underlying distribution of the data.
 \
 
 The following listing compares the median of the reputation for the independent groups using the $BC_a$ bootstrap method. We required extending `ggplot2` with custom notches (a confidence interval feature for boxplots) computed using the $BC_a$ method^[See the question https://stackoverflow.com/questions/59504775/]. The boxplots are also enriched with the mean statistic (the solid circle shape) and dashed lines through the median for each group. With the guiding help of the dashed lines we observe that no confidence interval notches overlap and therefore the median reputation for each group can be assumed to be significantly different, higher (i.e. better) or lower than the others. A non-official Stack Overflow badge was introduced with name "Other Answers" to account for answers with scores below the levels that are officially awarded by Stack Overflow but still relevant to our ratings because answers, despite lower in score, still carry more weight than some questions: 
@@ -1083,7 +1071,7 @@ comp %>%
   geom_jitter(alpha=0.05)
 ```
 
-No other ordering of badges and class levels produces the monotonically decreasing median and mean reputation distribution for the users depicted in Figure \@ref(fig:badges-significance-plot). However, visually comparing the confidence intervals for possible overlap is a necessary condition but often not a sufficient condition of significance. Therefore, we run the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for independent samples to determine the significance of the difference in population median between unpaired groups. The Wilcoxon test is non-parametric, and thus doesn't require the normality assumption of the data which is exactly our scenario. The following listing executes the Wilcoxon test on all badges pair-wise. The listing produces no output which confirms what we observed in Figure \@ref(fig:badges-significance-plot), namely, that the averages between these groups are pair-wise significatively different:
+No other ordering of badges and class levels produces the monotonically decreasing median and mean reputation distribution for the users depicted in Figure \@ref(fig:badges-significance-plot). We don't observe any overlaps between these 95% confidence intervals. However, visually comparing confidence intervals for possible overlap is a necessary condition but often not a sufficient condition of significance. Therefore, we run the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for independent samples to determine the significance of the difference in population median between unpaired groups. The Wilcoxon test is non-parametric, and thus doesn't require the normality assumption of the data which is exactly our scenario. The following listing executes the Wilcoxon test on all badges pair-wise. The listing produces no output which confirms what we've observed in Figure \@ref(fig:badges-significance-plot), namely, that the averages between these groups are pair-wise significatively different:
 ```{r badges-significance-wilcoxon, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE}
 # generate all possible pair-wise badges combinations
 c <- combn(badgesOrder, m=2)
@@ -1105,7 +1093,7 @@ for (i in 1:ncol(c)) {
 }
 ```
 
-The final ordering is summarized in the following Table \@ref(tab:badges-ratings-assignment)^[For more information on the Stack Overflow badges see https://stackoverflow.com/help/badges]. Note that we filter the last three rating levels "Other Questions" by `viewCount` being greater than 2.5k views, and thus we only consider question that have attracted certain level of interest:
+The final ordering is summarized in the following Table \@ref(tab:badges-ratings-assignment)^[For more information on the Stack Overflow badges see https://stackoverflow.com/help/badges]. Note that we filter the last three rating levels "Other Questions" by `viewCount` being greater than 2500 views, and thus we only consider question that have attracted certain level of interest:
 ```{r badges-ratings-assignment, fig.pos="H"}
 local({
   tbl <- data.frame(
@@ -1251,7 +1239,7 @@ summaryRep <- comp %>%
             median=median(reputation))
 ```
 
-At this point we're ready to assess whether the user reputation average differences are significant per rating group. We take N random samples from each rating group and again use the $BC_a$ method to construct 95% confidence limits. Figure \@ref(fig:ratings-significance-plot) shows that several rating groups do not seem to be significatively different; namely, the $BC_a$ confidence limit notches clearly overlap for ratings 3, 3.5, 4, and 4.5:
+At this point we're ready to assess whether the user reputation average differences are significant per rating group. We take N random samples from each rating group and again use the $BC_a$ method to construct 95% confidence limits. Figure \@ref(fig:ratings-significance-plot) shows that several rating groups do not seem to be significatively different; namely, the $BC_a$ confidence limit notches clearly overlap pair-wise for ratings 3, 3.5, 4, and 4.5:
 ```{r ratings-significance-plot, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Boxplot of the users reputation per class \\& badge",fig.pos="H"}
 # set the seed again
 portable.set.seed(1)
@@ -1270,7 +1258,7 @@ comp %>%
   geom_jitter(alpha=0.1)
 ```
 
-We again use the Wilcoxon test to compare the average of the different groups. The results reveal that the reputation median differences for the rating group pairs `3.5-4.0`, `3.5-4.5` and `4.0-4.5` aren't significant at 95% confidence level, whereas all other rating pairs are:
+We again use the Wilcoxon test to compare the pair-wise average of the different groups. The results reveal that the reputation median differences for the rating group pairs `3.5-4.0`, `3.5-4.5` and `4.0-4.5` aren't significant at 95% confidence level, whereas all other rating pairs are:
 ```{r ratings-sig-wilcoxon, echo=TRUE, message=TRUE}
 # generate all possible pair-wise rating combinations
 c <- combn(seq(1.5, 5.0, by=0.5), m=2)
@@ -1412,7 +1400,7 @@ $$
 J_{\text{baseline}} = \frac{1}{N} \sum_{i,j} (r_{i,j} - (\mu + b_i + b_j + f_{\text{smooth}}(b_e)))^2 + \lambda \left( \sum_{i}b_i^2 + \sum_{j}b_j^2 \right)
 $$
 
-Figure \@ref(fig:baseline-temp-effects-plot) depicts a `loess` smoothing of the effect $b_e$ after discounting all others and illustrates how strong this gained experience temporal effect is. We note how the effect has a relatively big range and a potential impact to the RMSE of approximately 0.4. We should also note how interesting this is, from the time the user first starts looking at a skill, the effect starts increasing until it reaches a peak on approximately 2.5 times 30 week blocks i.e. approximately 1.5 years. According to Figure \@ref(fig:baseline-temp-effects-plot) this is the average experience time needed for an user to reach her peak rating for a skill. After the peak rating is reached, we notice that the experience gained effect reaches a plateau and starts to fluctuate meaning users either: continue improving that skill or move on to other skill topics or simply the skill becomes irrelevant. There could also be a changing job or projects effect involved:
+Figure \@ref(fig:baseline-temp-effects-plot) depicts a `loess` smoothing of the effect $b_e$ after discounting all others and illustrates how strong this gained experience temporal effect is. We note how the effect has a relatively big range and a potential impact to the RMSE of approximately 0.4. We should also note how interesting this is, from the time the user first starts looking at a skill, the effect starts increasing until it reaches a peak on approximately 2.5 times 30 week blocks i.e. approximately 1.5 years. According to Figure \@ref(fig:baseline-temp-effects-plot) 1.5 years is the average experience time needed for an user to reach her peak rating for a skill. After the peak rating is reached, we notice that the experience gained effect reaches a plateau and starts to fluctuate meaning users either: continue improving that skill or move on to other skill topics or simply the skill becomes irrelevant. There could also be a changing job or projects effect involved:
 ```{r baseline-temp-effects-plot, echo=TRUE, message=TRUE, fig.cap="Smoothing function of the temporal effect gained experience", fig.pos="H"}
 # show the effects of number of week blocks since first post 
 weeksBlock <- 30
@@ -1494,7 +1482,7 @@ We could keep on exploring, adding features and accounting for more interesting 
 
 ## Low-Rank Matrix Factorization
 
-In this section we present a recommender system for predicting user skill ratings using the collaborative filtering (CF)^[https://en.wikipedia.org/wiki/Collaborative_filtering] technique. More specifically we'll implement the model-based low-rank matrix factorization (LRMF) method see [@10.1145/1401890.1401944] and [@10.1109/MC.2009.263]. The principle is that there are latent structures in the data that once revealed, we have a low-dimensional representation we can use to make automatic predictions, in this case user skill rating predictions. The low-intrinsic dimension representation we obtain using LRMF can also be achieved by computing the singular value decomposition SVD^[https://en.wikipedia.org/wiki/Singular_value_decomposition] see [@golub13] on the dense ratings matrix representation. However, this later approach is impractical and prohibitive when the dimensions of the dense representation are too large and the system is very sparse as in our case.
+In this section we present a recommender system for predicting user skill ratings using the collaborative filtering (CF)^[https://en.wikipedia.org/wiki/Collaborative_filtering] technique. More specifically we'll implement the model-based low-rank matrix factorization (LRMF) method see [@10.1145/1401890.1401944] and [@10.1109/MC.2009.263]. The principle is that there are latent structures in the data that once revealed, we obtain a low-dimensional representation we can use to make automatic predictions, in this case user skill rating predictions. The low-intrinsic dimension representation we obtain using LRMF can also be achieved by computing the singular value decomposition SVD^[https://en.wikipedia.org/wiki/Singular_value_decomposition] see [@golub13] on the dense ratings matrix representation. However, this later approach is impractical and prohibitive when the dimensions of the dense representation are too large and the system is very sparse as in our case.
 \
 
 Our algorithm will learn and encode a low-dimensional representation of the ratings within two matrices P and Q. P is a matrix of K latent rows (or features) and N columns corresponding to each distinct user. While Q is a matrix of K latent rows and M columns corresponding to each distinct skill. Note that we have encoded the two matrices in such a way that all matrix computations are done on the columns i.e. the dimensions corresponding to users and skills. Doing so we match R's default^[See https://cran.r-project.org/web/packages/reticulate/vignettes/arrays.html] column-major^[See https://en.wikipedia.org/wiki/Row-_and_column-major_order] order to achieve the best possible performance i.e. operate on contiguous memory when possible and avoid costly memory striding operations. Our LRMF cost function is then defined as follows:
@@ -1567,8 +1555,7 @@ s_{1} & s_{2} & \cdots & s_{j} & \cdots & s_{M} \\
 \end{bmatrix}
 $$
 \
-We also implemented a lock-free multi-core parallel^[Using `parallel::mclapply(...)` see https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html] variation of the classic SGD algorithm that trains faster. The key idea is to work in parallel on mutually exclusive column subsets of the P and Q matrices. We create as many mutually exclusive matrix index subset combinations of P and Q as there are cores available. We achieve that by first creating a blocks specification^[See https://stackoverflow.com/questions/59154906]. For example, assuming a 3 core system we would have:
-
+We also implemented a lock-free multi-core parallel^[Using `parallel::mclapply(...)` see https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html] version of the classic SGD algorithm that trains faster. The key idea is to use the modulo operation or remainder on the user and skill indexes dividing by the number of cores available (i.e. `i %% ncores` and `j %% ncores`) and work in parallel on mutually exclusive column blocks of the P and Q matrices defined by those remainders. We create as many mutually exclusive matrix index subset combinations of P and Q as there are cores available. We achieve that by first creating a blocks specification^[See https://stackoverflow.com/questions/59154906]. For example, assuming a 3 core system we consider the blocks specification depicted in Table \@ref(tab:method-blocking-spec):
 ```{r method-blocking-spec, echo=TRUE, message=TRUE, fig.pos="H"}
 ncores <- 3
 bi <- rep(0:(ncores-1), ncores)
@@ -1584,7 +1571,7 @@ caption = paste0("Parallel block groups specification, permutations ",
   row_spec(7:9, background = "#4DAF4A")
 ```
 
-Table \@ref(tab:method-blocking-spec) depicts the blocks specification containing 3 different block groups (every 3 consecutive rows) in i (users) and j (skills) to run in parallel and mutual exclusion. Therefore, selecting one of these three block groups randomly choosing rows as described in the following listing we can filter the matrices P and Q for users and skills that match those blocks and compute the gradient updates corresponding to those blocks in parallel:
+Table \@ref(tab:method-blocking-spec) depicts the blocks specification containing 3 different block groups (every 3 consecutive rows) in i (users) and j (skills) to run in parallel and mutual exclusion. Therefore, selecting one of these three block groups randomly and choosing rows as described in Table \@ref(tab:method-blocking-first) we can filter the matrices P and Q for users and skills that match those blocks and compute the gradient updates corresponding to those blocks in parallel:
 ```{r method-blocking-first, echo=TRUE, message=TRUE}
 # first group of mutually exclusive blocks
 prettyPrint(blocks %>% slice(1:3), 
@@ -1593,10 +1580,10 @@ prettyPrint(blocks %>% slice(1:3),
   row_spec(1:3, background = "#E41A1C")
 ```
 
-Table \@ref(tab:method-blocking-first) depicts the block group one. In this case, the first core will work on users and skills whose `i %% ncores == 0 & j %% ncores == 0` respectively, another core will work on `i %% ncores == 1 & j %% ncores == 1` and the third core on `i %% ncores == 2 & j %% ncores == 2`. However, doing so will only train those block combinations. Therefore at every iteration of the algorithm and before running the batch updates, we randomly choose which of the three block groups to use, either: `blocks[1:3,]`, `blocks[4:6,]` or `blocks[7:9,]` and each core will run batch updates in a loop ensuring maximum CPU utilization. We would of course like to run long batches in parallel but doing so may lead the SGD algorithm advancing in the wrong direction without any chance for correction.
+Table \@ref(tab:method-blocking-first) depicts the block group one. In this case, the first core will work on users and skills whose `i %% ncores == 0 & j %% ncores == 0` respectively, another core will work on `i %% ncores == 1 & j %% ncores == 1` and the third core on `i %% ncores == 2 & j %% ncores == 2`. However, doing so will only train those block combinations. Therefore at every main iteration of the algorithm and before running the batch updates, we randomly choose which of the three block groups to use, either: `blocks[1:3,]`, `blocks[4:6,]` or `blocks[7:9,]` and each core will run batch updates in a loop ensuring maximum CPU utilization. We would of course like to run long batches in parallel but doing so may lead the SGD algorithm advancing in the wrong gradient direction without any chance for correction.
 \
 
-The following code listing corresponds to the core of the SGD algorithm implementation as part of the function `lrmf$fit(...)` and including both, the classic and parallel variations. We iterate `maxIter` times as shown in line `#1`. Lines `#3` through `#18` correspond to the classic implementation. There we have the gradient P and Q updates and all operations are computed on the matrix columns as discussed before. Lines `#20` through `#80` correspond to the parallel implementation. There we pick a random block group and run `parIter` iterations on it. In lines `#54` through `#68` we accumulate the set of distinct updated indexes for the users and skills and return them along with the gradient updates. Finally the lines `#75` through `#79` "reduce" or consolidate the updates from all blocks into P and Q.
+The following code listing corresponds to the core of the SGD algorithm implementation as part of the function `lrmf$fit(...)` and including both, the classic and parallel versions. We iterate `maxIter` times as shown in line `#1`. Lines `#3` through `#18` correspond to the classic implementation. There we have the gradient P and Q updates and all operations are computed on the matrix columns as discussed before. Lines `#20` through `#80` correspond to the parallel implementation. In line `#23` we pick a block group randomly and run `parIter` iterations. In lines `#54` through `#68` we accumulate the set of distinct updated indexes for the users and skills and return them along with the corresponding gradient updates accumulated in copies of P and Q. Finally the lines `#75` through `#79` "reduce" or consolidate the updates from all blocks into P and Q. Note that within the `mclapply` function scope we work on copies of P and Q which is not ideal since there is an significant overhead related to copying back and forth the memory of these matrices. However, this overhead diminishes when we run larger number of batch iterations.
 ```{r sgd-listing, echo=TRUE, message=TRUE, eval=FALSE}
   for (iter in 1:maxIter) {
     if (ncores == 1) {
@@ -1681,7 +1668,7 @@ The following code listing corresponds to the core of the SGD algorithm implemen
   }
 ```
 
-Our SGD implementation is integrated with the popular machine learning R package `caret`^[See https://cran.r-project.org/web/packages/caret/] as a custom `lrmf` model^[See using your own model in train https://topepo.github.io/caret/using-your-own-model-in-train.html], and thus we take advantage of all the caret infrastructure for calibration, training and prediction in addition to making our code easier to understand, maintain and reuse.
+We integrated our SGD implementation with the popular machine learning R package `caret`^[See https://cran.r-project.org/web/packages/caret/] as a custom `lrmf` model^[See using your own model in train https://topepo.github.io/caret/using-your-own-model-in-train.html], and thus we take advantage of all the caret infrastructure for calibration, training and prediction in addition to making our code easier to understand, maintain and reuse.
 \
 
 ```{r model-impl, echo=FALSE, message=FALSE}
@@ -2135,7 +2122,7 @@ rmseHist <- rmseHist %>%
               add_column(method="Classic"))
 ```
 
-Figure \@ref(fig:lrmf-convergence) reveals that the parallel implementation arrives to a comparable RMSE in about half the time of the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction. This we can see in the RMSE convergence for the parallel case being more bumpy compared to the steady convergence of the classic algorithm. 
+Figure \@ref(fig:lrmf-convergence) reveals that the parallel implementation arrives to a comparable RMSE in about half the time of the classic. However, by halving the number of iterations, the parallel version has half the opportunities to correct the gradient direction. This we can see in the RMSE convergence for the parallel case being more bumpy compared to the steady convergence of the classic algorithm. However, judging by Figure \@ref(fig:lrmf-convergence) this doesn't seem to affect the parallel's overall performance, to the contrary, it depicts nicer convergence properties.
 ```{r lrmf-convergence, fig.width=10, fig.height=10, fig.fullwidth=TRUE, echo=TRUE, message=TRUE, fig.cap="Convergence comparison between classic and parallel implementations", fig.pos="H"}
 # plot the convergence for the model on the full training data
 colorSpec <- c("salmon", "turquoise3")
@@ -2242,7 +2229,7 @@ caption = "Skill predictions where the author is rated above average")
 
 # Conclusion {-}
 
-In this work we have unveiled multiple data science analysis use-cases possible by studying the Stack Overflow data. There are many more interesting questions we could answer using this dataset, for example: 
+In this work we have unveiled multiple data science analysis use-cases possible by studying the Stack Overflow dataset. There are many more interesting questions we could answer using this dataset, for example: 
 
 * how does the question sentiment affect the reputation of the users?
 * how does the sentiment also affect the score of the posts? 
@@ -2255,10 +2242,10 @@ However, in this study we have focussed on topics of more practical relevance an
 First we've built a fully automated R script to: download, extract, parse, clean and store the Stack Overflow data. It was already a challenge to start with since some of the extracted XML files expand to 75GB in size. We applied blocking and parallel processing in this and other areas of this work.
 \
 
-We explored the data and noticed many important details e.g. answers are twice as likely to be up voted compared to questions even though providing an interesting well-written question takes about the same amount of effort as providing high quality answers^[This is partly confirmed by a recent Stack Overflow decision to weight questions equally as answers https://stackoverflow.blog/2019/11/13/were-rewarding-the-question-askers/]. Therefore, we learned that reaching the "Great Question" is in average twice as difficult as reaching the "Great Answer" gold badge. We successfully applied dimensionality reduction in two different areas, first we applied PCA to the co-occurrence matrix of skills in questions and in order to identify the main technology trends occurring in the last ten years which was show in Figure \@ref(fig:the-what-visualization). As discussed, running this analysis in a rolling time window fashion we would discover the changes in technology trends over different periods of time. As result of this analysis we learned from the first principal component that the technologies explaining most of the variance in the data are related to blockchain, cloud computing, build, deployment tools and data visualization. Although not totally surprising it's interesting to learn that blockchain seems to be applied in many different contexts. Another take away result is that cloud computing is ubiquitous. It's definitely a strong asset for any technology professional to master.
+We explored the data and noticed many important details e.g. answers are twice as likely to be upvoted compared to questions even though providing an interesting well-written question takes about the same amount of effort as providing high quality answers^[This is partly confirmed by a recent Stack Overflow decision to weight questions equally as answers https://stackoverflow.blog/2019/11/13/were-rewarding-the-question-askers/]. Therefore, we learned that reaching the "Great Question" is in average twice as difficult as reaching the "Great Answer" gold badge. We successfully applied dimensionality reduction in two different areas, first we applied PCA to the co-occurrence matrix of skills in questions and in order to identify the main technology trends occurring in the last ten years which was show in Figure \@ref(fig:the-what-visualization). As discussed, running this analysis in a rolling time window fashion we would discover the changes in technology trends over different periods of time. Studying the first principal component we learned that the technologies explaining most of the variance in the data are related to blockchain, cloud computing, build, deployment tools and data visualization. Although not totally surprising it's interesting to learn that blockchain seems to be applied in many different contexts. Another take away result is that cloud computing is ubiquitous. It's definitely a strong asset for any technology professional to master.
 \
 
-Placing the main technology trends in geographical context as shown in Figure \@ref(fig:the-where-visualization) for the Stack Overflow users located in Switzerland reveals that Zurich has become a technology center. We identified all the main trends there, and a high quantity and quality of Stack Overflow users posting from this location. Indeed most of the big technology players have been expanding to Zurich including: Google, Microsoft, Facebook, Oracle, and others. We noticed too that the south-east parts of Switzerland e.g. Tessin don't seem to be too active technology-wise at least this isn't obvious by looking at the number of Stack Overflow users posting those locations. We expected to see above average blockchain activity in Zug believed to be a cryptocurrency haven but this doesn't seem to be the case again judging by the top posts from users located in that area.
+Placing the main technology trends in geographical context, shown in Figure \@ref(fig:the-where-visualization) for the Stack Overflow users located in Switzerland reveals that Zurich has become a technology center. We identified all the main trends there, and a high quantity and quality of Stack Overflow users posting from this location. Indeed most of the big technology players have been expanding to Zurich including: Google, Microsoft, Facebook, Oracle, and others. We noticed too that the south-east parts of Switzerland e.g. Tessin don't seem to be too active technology-wise at least this isn't obvious by looking at the number of Stack Overflow users posting those locations. We expected to see above average blockchain activity in Zug believed to be a cryptocurrency haven but this doesn't seem to be the case again judging by the top posts from users located in that area.
 \
 
 Finally, we shifted our focus to building a new dataset derived from Stack Overflow, the `ratings` dataset and we surprised ourselves facing an interesting statistical inference challenge. Namely to assess the significance of the user reputation average differences before and after building the `ratings` dataset. Before building the `ratings` dataset we assessed significance for the difference in user reputation averages between the class and badge groups, see Figure \@ref(fig:badges-significance-plot). After building the `ratings` dataset we assessed significance for the difference in user reputation averages between the rating groups, see Figure \@ref(fig:ratings-significance-plot). Due to the users reputation  strong departure from normality (see Figures \@ref(fig:histogram-reputation) and \@ref(fig:histogram-reputation-facet)) we tested significance of the difference in population medians and using the non-parametric $BC_a$ method see [@diciccio1996] and [@davison1997] for constructing 95% boostrap confidence limits. Using the confidence limits we tested for significance by visually inspecting that there wasn't any overlap between the confidence limits. We then verified the results using the Wilcoxon rank sum test^[https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html] [see @doi:10.1080/01621459.1972.10481279] for all groups pair-wise. Three rating groups weren't found to be significatively different pair-wise and we gauged the impact in the user skill rating predictions. The result of this challenge led to our user skill rating assignment strategy described in Table \@ref(tab:badges-ratings-assignment). Building the `ratings` dataset was also a performance challenge which we attacked, once more, using blocking and parallel processing. Last but not least we built a new recommender system using the collaborative filtering technique and featuring two SGD algorithm flavours: classic and parallel. Our SGD implementation outperformed the baseline model out-of-sample and for a slim margin. Figure \@ref(fig:lrmf-convergence) depicts promising convergence properties for the parallel method, reaching results faster than the classic with a near 2x speed up. We used our model for predicting user skill ratings which delivered interesting and useful results.

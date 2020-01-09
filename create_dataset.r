@@ -33,7 +33,6 @@ if(!require(doMC)) install.packages("doMC", repos = "http://cran.us.r-project.or
 if(!require(parallel)) install.packages("parallel", repos = "http://cran.us.r-project.org")
 if(!require(xml2)) install.packages("xml2", repos = "http://cran.us.r-project.org")
 if(!require(readr)) install.packages("readr", repos = "http://cran.us.r-project.org")
-if(!require(rstudioapi)) install.packages("rstudioapi", repos = "http://cran.us.r-project.org")
 if(!require(ggmap)) install.packages("ggmap", repos = "http://cran.us.r-project.org")
 if(!require(here)) install.packages("here", repos = "http://cran.us.r-project.org")
 
@@ -45,13 +44,8 @@ if(!require(here)) install.packages("here", repos = "http://cran.us.r-project.or
 ncores <- detectCores()
 registerDoMC(ncores)
 
-# set working path to this file's path
-if (rstudioapi::isAvailable()) {
-  currentPath <- rstudioapi::getActiveDocumentContext()$path
-} else {
-  currentPath <- here()
-}
-setwd(dirname(currentPath))
+# best way to find where we're
+setwd(here::here())
 print(getwd())
 
 xmlDir <- file.path("data", "xml")

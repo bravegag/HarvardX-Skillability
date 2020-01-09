@@ -41,7 +41,6 @@ if(!require(ggrepel)) install.packages("ggrepel", repos = defaultRepos)
 if(!require(scales)) install.packages("scales", repos = defaultRepos)
 if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = defaultRepos)
 if(!require(Metrics)) install.packages("Metrics", repos = defaultRepos)
-if(!require(rstudioapi)) install.packages("rstudioapi", repos = defaultRepos)
 if(!require(here)) install.packages("here", repos = defaultRepos)
 
 ##########################################################################################
@@ -62,14 +61,8 @@ if(.Platform$OS.type == "unix") {
   ncores <- 1
 }
 
-# set working path to our project's file path
-if (rstudioapi::isAvailable()) {
-  currentPath <- rstudioapi::getActiveDocumentContext()$path
-} else {
-  # this will likely fail to find the current path, avoid if possible
-  currentPath <- here()
-}
-setwd(dirname(currentPath))
+# best way to find where we're
+setwd(here::here())
 print(getwd())
 
 ##########################################################################################
@@ -116,14 +109,10 @@ filePathForObjectName <- function(objectName, prefixDir="data",
 # @param userName the GitHub user name e.g. "bravegag"
 # @param repoName the GitHub repository name e.g. "HarvardX-Skillability"
 # @param branchName the GitHub branch name e.g. "master"
-# @param fallbackUrl the url to fall back to when nothing else works.
-# @param retry whether to retry accessing the data file.
 # @returns the dataset by name.
 readObjectByName <- function(objectName, prefixDir="data", rdsDir="rds", ext=".rds", 
                              userName="bravegag", repoName="HarvardX-Skillability", branchName="master",
-                             baseUrl="https://github.com/%s/%s/blob/%s/data/rds/%s?raw=true",
-                             fallbackUrl="https://www.dropbox.com/sh/tylgh44b9qu0z16/AABh_HVZ7oxaPYDGZDhLMQJea?dl=1",
-                             retry=T) {
+                             baseUrl="https://github.com/%s/%s/blob/%s/data/rds/%s?raw=true") {
   tryCatch({
     filePath <- filePathForObjectName(objectName = objectName, prefixDir = prefixDir, 
                                       rdsDir = rdsDir, ext = ext)
@@ -132,7 +121,7 @@ readObjectByName <- function(objectName, prefixDir="data", rdsDir="rds", ext=".r
       # download the file
       url <- sprintf(baseUrl, userName, repoName, branchName, fileName)
       cat(sprintf("downloading \"%s\"\n", url))
-      download.file(url, filePath, extra="L")
+      download.file(url, filePath, extra="L", mode="wb")
     } else {
       cat(sprintf("object \"%s\" exists, skipping download ...\n", filePath))
     }
@@ -144,20 +133,7 @@ readObjectByName <- function(objectName, prefixDir="data", rdsDir="rds", ext=".r
   }, error = function(e) {
     cat(sprintf("ERROR - attempting to access or download the %s data:\n%s\n", 
                 objectName, e))
-    if (retry) {
-      cat('RECOVERY: hold tight falling back to Dropbox download ... \n')
-      # save to current working directory
-      zipFile <- "rds.zip"
-      download.file(fallbackUrl, zipFile)
-      # extract the file into the right folder
-      rdsFolder <- file.path(prefixDir, rdsDir)
-      unzip(zipFile, exdir = rdsFolder, overwrite = T)
-      file.remove(zipFile)
-      # retry with the files downloaded from dropbox
-      return(readObjectByName(objectName, retry=F))
-    } else {
-      return(NULL)
-    }
+    return(NULL)
   }, finally = {
     # nothing to do here
   })  
