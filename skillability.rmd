@@ -1281,10 +1281,10 @@ for (i in 1:ncol(c)) {
 
 # Modeling approach
 
-In this section we'll build a recommender system for predicting user skill ratings using the collaborative filtering (CF) technique. We'll explore a simpler baseline method that discounts multiple effects or bias `b`'s and then move to the more advanced low-rank matrix factorization (LRMF) method implemented using the stochastic gradient descent (SGD) algorithm. The loss function we'll employ to evaluate the predictions in both cases is the root mean squared error (RMSE) where $r_{i,j}$ is the true rating and $\hat{r_{i,j}}$ is our predicted user skill rating for user $i$ and skill $j$, we'll reuse the `Metrics::rmse(...)` implementation:
+In this section we'll build a recommender system for predicting user skill ratings using the collaborative filtering (CF) technique. We'll explore a simpler baseline method that discounts multiple effects or bias `b`'s and then move to the more advanced low-rank matrix factorization (LRMF) method implemented using the stochastic gradient descent (SGD) algorithm. The loss function we'll employ to evaluate the predictions in both cases is the root mean squared error (RMSE) where $r_{i,j}$ is the true rating and $\hat{r_{i,j}}$ is our predicted user skill rating for user $i$ and skill $j$. We'll reuse the `Metrics::rmse(...)` function implementation for doing this computation.
 
 $$
-\text{RMSE} = \sqrt{\frac{1}{N} \sum_{i,j} (\hat{r}_{i,j} - r_{i,j})^2}
+\text{RMSE} = \sqrt{\frac{1}{N} \sum_{i,j} (r_{i,j} - \hat{r}_{i,j})^2}
 $$
 Let's get some basic information about the `ratings` dataset e.g. sparsity. Table \@ref(tab:modeling-approach-basic) shows there are 199.8k users and 2000 skills^[These are the top 2000 skills we have used before that account for 82.3% of the total taggings.] and a highly sparse dataset i.e. only about 1.4% of all the possible user skill ratings:
 ```{r modeling-approach-basic, echo=TRUE, message=TRUE, fig.pos="H"}
@@ -1333,10 +1333,10 @@ nrow(testSet)
 
 ## Baseline
 
-To get a benchmark and idea for what level of RMSE we can reach, we start by exploring the simpler but effective baseline model. In this model we'll account for the ratings' gobal mean $\mu$, user effects $b_i$, and skill effects $b_j$. We'll also employ regularization $\lambda$ (i.e. penalized least squares) which permit us to penalize large absolute value estimates that are formed from small sample sizes e.g. users with very few skill ratings. If these estimates were left untreated with regularization, they would increase uncertainty, and thus contribute to larger errors negatively impacting our RMSE. Our baseline model is then specified using the following cost function:
+To get a benchmark and idea for what level of RMSE we can reach, we start by exploring the simpler but effective baseline model. In this model we'll account for the ratings' gobal mean $\mu$, user effects $b_i$, and skill effects $b_j$. We'll also employ regularization $\lambda$ (i.e. penalized least squares) which permit us to penalize large absolute value estimates that are formed from small sample sizes see [@irizarry2019] e.g. users with very few skill ratings. If these estimates were left untreated with regularization, they would increase uncertainty, and thus contribute to larger errors negatively impacting our RMSE. Considering that $N$ is the number of training samples, our baseline model is specified using the following cost function:
 
 $$
-J_{\text{baseline}} = \frac{1}{N} \sum_{i,j} (r_{i,j} - (\mu + b_i + b_j)^2 + \lambda \left( \sum_{i}b_i^2 + \sum_{j}b_j^2 \right)
+J_{\text{baseline}} = \frac{1}{N} \sum_{i,j} \left(r_{i,j} - (\mu + b_i + b_j)\right)^2 + \lambda \left( \sum_{i}b_i^2 + \sum_{j}b_j^2 \right)
 $$
 
 We start building the baseline model with just the average. Note that we're using only the training set:
@@ -1566,7 +1566,7 @@ prettyPrint(
   blocks
 , latex_options = NULL, booktabs = F, 
 caption = paste0("Parallel block groups specification, permutations ",
-                 "of cores (e.g. 3) in 2 (i.e. P and Q)")) %>%
+                 "in 3 cores with replacement in 2 (i.e. for P and Q)")) %>%
   row_spec(1:3, background = "#E41A1C") %>%
   row_spec(4:6, background = "#377EB8") %>%
   row_spec(7:9, background = "#4DAF4A")
@@ -2139,7 +2139,7 @@ rmseHist %>%
            y = rmseHist %>% 
              filter(method == sprintf("Parallel - %d cores", ncores)) %>% 
              last() %>% 
-             pull(rmse) + 0.004,
+             pull(rmse) - 0.004,
            label = sprintf("%.2f sec", elapsedPar)) + 
   annotate("text", x = 250, colour = colorSpec[1],
            y = rmseHist %>% 
