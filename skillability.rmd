@@ -1209,7 +1209,8 @@ We can see in Table \@ref(tab:ratings-rating-avg) the measures of central tenden
 prettyPrint(
   ratings %>%
     summarise(median = median(rating), mean = mean(rating), sd = sd(rating))
-, latex_options = c("striped"), caption = "Ratings dataset measures of central tendency and dispersion")
+, latex_options = c("striped"), caption = 
+  "Ratings dataset measures of central tendency and dispersion")
 ```
 
 The following histogram plot depicts the distribution of the `ratings` dataset. We see that the lowest rating is 1.5 and goes by steps of 0.5 all the way to 5.0:
