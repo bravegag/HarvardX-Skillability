@@ -17,6 +17,7 @@
 
 # clean the environment
 rm(list = ls())
+
 # trigger garbage collection and free some memory if possible
 gc(TRUE, TRUE, TRUE)
 
@@ -24,17 +25,20 @@ gc(TRUE, TRUE, TRUE)
 ## Install and load required library dependencies
 ##########################################################################################
 
-if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
-if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
-if(!require(tictoc)) install.packages("tictoc", repos = "http://cran.us.r-project.org")
-if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
-if(!require(stringr)) install.packages("stringr", repos = "http://cran.us.r-project.org")
-if(!require(doMC)) install.packages("doMC", repos = "http://cran.us.r-project.org")
-if(!require(parallel)) install.packages("parallel", repos = "http://cran.us.r-project.org")
-if(!require(xml2)) install.packages("xml2", repos = "http://cran.us.r-project.org")
-if(!require(readr)) install.packages("readr", repos = "http://cran.us.r-project.org")
-if(!require(ggmap)) install.packages("ggmap", repos = "http://cran.us.r-project.org")
-if(!require(here)) install.packages("here", repos = "http://cran.us.r-project.org")
+defaultRepos <- "http://cran.us.r-project.org"
+
+if(!require(tidyverse)) install.packages("tidyverse", repos = defaultRepos)
+if(!require(data.table)) install.packages("data.table", repos = defaultRepos)
+if(!require(tictoc)) install.packages("tictoc", repos = defaultRepos)
+if(!require(lubridate)) install.packages("lubridate", repos = defaultRepos)
+if(!require(stringr)) install.packages("stringr", repos = defaultRepos)
+if(!require(doMC)) install.packages("doMC", repos = defaultRepos)
+if(!require(parallel)) install.packages("parallel", repos = defaultRepos)
+if(!require(xml2)) install.packages("xml2", repos = defaultRepos)
+if(!require(readr)) install.packages("readr", repos = defaultRepos)
+if(!require(ggmap)) install.packages("ggmap", repos = defaultRepos)
+if(!require(rstudioapi)) install.packages("rstudioapi", repos = defaultRepos)
+if(!require(here)) install.packages("here", repos = defaultRepos)
 
 ##########################################################################################
 ## Setup initial global values
@@ -44,8 +48,14 @@ if(!require(here)) install.packages("here", repos = "http://cran.us.r-project.or
 ncores <- detectCores()
 registerDoMC(ncores)
 
-# best way to find where we're
-setwd(here::here())
+# best attempt to set the working path to this file's path
+if (rstudioapi::isAvailable()) {
+  currentPath <- dirname(rstudioapi::getActiveDocumentContext()$path)
+} else {
+  # not very accurate, will default to home folder and not this file's path
+  currentPath <- here()
+}
+setwd(currentPath)
 print(getwd())
 
 xmlDir <- file.path("data", "xml")

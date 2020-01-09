@@ -17,6 +17,7 @@
 
 # clean the environment
 rm(list = ls())
+
 # trigger garbage collection and free some memory if possible
 gc(TRUE, TRUE, TRUE)
 
@@ -41,6 +42,7 @@ if(!require(ggrepel)) install.packages("ggrepel", repos = defaultRepos)
 if(!require(scales)) install.packages("scales", repos = defaultRepos)
 if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = defaultRepos)
 if(!require(Metrics)) install.packages("Metrics", repos = defaultRepos)
+if(!require(rstudioapi)) install.packages("rstudioapi", repos = defaultRepos)
 if(!require(here)) install.packages("here", repos = defaultRepos)
 
 ##########################################################################################
@@ -61,8 +63,14 @@ if(.Platform$OS.type == "unix") {
   ncores <- 1
 }
 
-# best way to find where we're
-setwd(here::here())
+# best attempt to set the working path to this file's path
+if (rstudioapi::isAvailable()) {
+  currentPath <- dirname(rstudioapi::getActiveDocumentContext()$path)
+} else {
+  # not very accurate, will default to home folder and not to this file's path
+  currentPath <- here()
+}
+setwd(currentPath)
 print(getwd())
 
 ##########################################################################################
