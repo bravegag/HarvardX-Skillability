@@ -4,7 +4,7 @@ We analyse the [Stack Overflow](https://stackoverflow.com/) data using multiple 
 ## The What: skills and technology trends
 We use dimensionality reduction, more specifically the principal component analysis (PCA) to discover the skills or technologies explaining most of the variance in the Stack Overflow data i.e. the technology trends.
 
-![Technology trends](https://raw.githubusercontent.com/bravegag/HarvardX-Skillability/master/images/pca.svg "Technology trends")
+![Technology trends](https://raw.githubusercontent.com/bravegag/HarvardX-Skillability/master/images/pca.png "Technology trends")
 
 ## The Where: putting it in geographical context
 We take those technology trends and put them in Geographical context for Switzerland.
