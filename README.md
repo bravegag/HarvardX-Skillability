@@ -14,6 +14,8 @@ We take those technology trends and put them in Geographical context for Switzer
 ## The How: rating user skills
 We employ Statistical Inference to build a new derived `ratings` dataset providing user skill ratings. Finally we build a recommender system using collaborative filtering (CF) and the low-rank matrix factorization model-based approach (LRMF) to predict user skill ratings.
 
+![Ratings](https://raw.githubusercontent.com/bravegag/HarvardX-Skillability/master/images/ratings.png "Ratings")
+
 # Project files
 
 * The [`create_dataset.r`](https://raw.githubusercontent.com/bravegag/HarvardX-Skillability/master/create_dataset.r) script will automatically download, extract, parse and clean the Stack Overflow data files. It will also construct the new derived `ratings` dataset.
