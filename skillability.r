@@ -758,6 +758,9 @@ ratings %>%
 ratings %>% 
   ggplot(aes(rating, fill=..x..)) + geom_histogram() +
   scale_x_continuous(breaks = seq(1.5, 5, by=0.5)) +
+  ggtitle("Histogram of the user skill ratings") +
+  theme(legend.position="top", plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=12)) + 
   scale_fill_gradient("Legend", low = "#E41A1C", high = "#4DAF4A") +
   theme(legend.position="bottom", legend.title = element_blank())
 
