@@ -1,5 +1,5 @@
 # Skillability HarvardX Data Science Capstone
-We analyse the Stack Overflow data using multiple Data Science and Machine Learning techniques.
+We analyse the (Stack Overflow)[https://stackoverflow.com/] data using multiple Data Science and Machine Learning techniques.
 
 ## The What: skills and technology trends
 We use dimensionality reduction, more specifically the principal component analysis (PCA) to discover the skills or technologies explaining most of the variance in the Stack Overflow data i.e. the technology trends.
