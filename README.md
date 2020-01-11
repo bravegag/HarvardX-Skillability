@@ -9,6 +9,8 @@ We use dimensionality reduction, more specifically the principal component analy
 ## The Where: putting it in geographical context
 We take those technology trends and put them in Geographical context for Switzerland.
 
+![Switzerland](https://raw.githubusercontent.com/bravegag/HarvardX-Skillability/master/images/switzerland.png "Switzerland")
+
 ## The How: rating user skills
 We employ Statistical Inference to build a new derived `ratings` dataset providing user skill ratings. Finally we build a recommender system using collaborative filtering (CF) and the low-rank matrix factorization model-based approach (LRMF) to predict user skill ratings.
 
