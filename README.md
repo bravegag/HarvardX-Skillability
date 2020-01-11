@@ -16,6 +16,6 @@ We employ Statistical Inference to build a new derived `ratings` dataset providi
 
 # Project files
 
-* The `create_dataset.r` script will automatically download, extract, parse and clean the Stack Overflow data files. It will also construct the new derived `ratings` dataset.
-* The `skillability.r` script contains all the data science analysis code. A new LRMF model implementation is integrated with the popular `caret` machine learning library for calibration, training and prediction.
-* The `skillability.pdf` contains the final project report.
+* The [`create_dataset.r`](https://raw.githubusercontent.com/bravegag/HarvardX-Skillability/master/create_dataset.r) script will automatically download, extract, parse and clean the Stack Overflow data files. It will also construct the new derived `ratings` dataset.
+* The [`skillability.r`](https://raw.githubusercontent.com/bravegag/HarvardX-Skillability/master/skillability.r) script contains all the data science analysis code. A new LRMF model implementation is integrated with the popular `caret` machine learning library for calibration, training and prediction.
+* The [`skillability.pdf`](https://raw.githubusercontent.com/bravegag/HarvardX-Skillability/master/skillability.pdf) contains the final project report.
